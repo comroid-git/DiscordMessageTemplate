@@ -1,0 +1,50 @@
+﻿text = "Hello, World!";
+embed = {
+    title = "Embed Title";
+    url = "https://google.com";
+    description = "Embed Description";
+    
+    // author variants
+    author = "Kaleidox";
+    author = "Kaleidox", "https://kaleidox.de/favicon.png";
+    author = author {
+        name = "Kaleidox";
+        icon = "https://kaleidox.de/favicon.png";
+        url = "https://kaleidox.de";
+    }
+    
+    timestamp = now();
+    
+    color = #123456;
+    
+    // footer variants
+    footer = "Embed Footer";
+    footer = "Embed Footer", "https://kaleidox.de/favicon.png";
+    footer = footer {
+        text = "Embed Footer";
+        icon = "https://kaleidox.de/favicon.png";
+    }
+    
+    image = "https://kaleidox.de/image.png";
+    
+    thumbnail = "https://kaleidox.de/image.png";
+    
+    // can be += or = for its the first field
+    fields += field {
+        title = "Embed Field";
+        text = "This is an Embed Field";
+        inline;
+    }
+    fields += [
+        field {
+            title = "Embed Field";
+            text = "This is an Embed Field";
+            inline;
+        }
+    ]
+    
+    // might want to append footer info
+    footer += footer {
+        text = " which holds lot of Footer info";
+    }
+}

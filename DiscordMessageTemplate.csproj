@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <NeutralLanguage>en-150</NeutralLanguage>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>preview</LangVersion>
+        <OutputType>Exe</OutputType>
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>false</SelfContained>
+        <TargetFramework>net6.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <OutputPath>bin\</OutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Antlr4.Runtime.Standard" Version="4.12.0" />
+        <PackageReference Include="Antlr4BuildTasks" Version="12.2.0" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Antlr4 Include="grammar/DiscordMessageTemplate.g4">
+            <Generator>MSBuild:Compile</Generator>
+            <Package>DiscordMessageTemplate.Antlr</Package>
+            <Listener>True</Listener>
+            <Visitor>True</Visitor>
+        </Antlr4>
+    </ItemGroup>
+
+</Project>
