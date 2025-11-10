@@ -53,7 +53,6 @@ TIMESTAMP: 'timestamp';
 COLOR: 'color';
 FOOTER: 'footer';
 IMAGE: 'image';
-THUMBNAIL: 'thumbnail';
 FIELDS: 'fields';
 FIELD: 'field';
 
@@ -135,7 +134,6 @@ embedComponent
     | COLOR ASSIGN expression SEMICOLON             #embedColor
     | FOOTER mutate embedFooterComponent            #embedFooter
     | IMAGE ASSIGN expression SEMICOLON             #embedImage
-    | THUMBNAIL ASSIGN expression SEMICOLON         #embedThumbnail
     | FIELDS mutate embedFieldsComponent            #embedFields
 ;
 
