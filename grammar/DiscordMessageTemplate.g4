@@ -29,8 +29,6 @@ RIDX: ']';
 LACC: '{';
 RACC: '}';
 
-NOW: 'now';
-
 TEXT: 'text';
 
 VAR: 'var';
@@ -40,9 +38,6 @@ FOR: 'for';
 WHILE: 'while';
 DO: 'do';
 FUNCTION: 'function';
-
-TRUE: 'true' | 'yes';
-FALSE: 'false' | 'no';
 
 URL: 'url';
 NAME: 'name';
@@ -61,24 +56,32 @@ THUMBNAIL: 'thumbnail';
 FIELDS: 'fields';
 FIELD: 'field';
 
+TRUE: 'true' | 'yes';
+FALSE: 'false' | 'no';
+
 STRLIT: QUOTE (ESCAPE_QUOTE | (~[\r\n"]))* QUOTE;
 NUM: [0-9]+;
-ID: [a-zA-Z0-9_$]+?;
+ID: [a-zA-Z0-9_$]+;
 HEXNUM: ('0x' | '#') [0-9a-fA-F]+;
 
 WHITESPACE: [ \t\r\n] -> channel(HIDDEN);
 
-op
-    : PLUS                  #opPlus
-    | MINUS                 #opMinus
-    | MULTIPLY              #opMultiply
-    | DIVIDE                #opDivide
-    | MODULUS               #opModulus
-    | ROOF                  #opPow
-    | AMPERSAND             #opBitwiseAnd
-    | AMPERSAND AMPERSAND   #opLogicalAnd
-    | BAR                   #opBitwiseOr
-    | BAR BAR               #opLogicalOr
+unaryOp
+    : MINUS         #unaryOpNumericalNegate
+    | EXCLAMATION   #unaryOpLogicalNegate
+    | TILDE         #unaryOpBitwiseNegate
+;
+binaryOp
+    : PLUS                  #binaryOpPlus
+    | MINUS                 #binaryOpMinus
+    | MULTIPLY              #binaryOpMultiply
+    | DIVIDE                #binaryOpDivide
+    | MODULUS               #binaryOpModulus
+    | ROOF                  #binaryOpPow
+    | AMPERSAND             #binaryOpBitwiseAnd
+    | AMPERSAND AMPERSAND   #binaryOpLogicalAnd
+    | BAR                   #binaryOpBitwiseOr
+    | BAR BAR               #binaryOpLogicalOr
 ;
 
 expression
@@ -86,12 +89,10 @@ expression
     | (TRUE | FALSE)                                                        #exprBool
     | NUM (DOT NUM)?                                                        #exprNumber
     | ID                                                                    #exprVar
-    | NOW LBRACE RBRACE                                                     #exprNow
     | HEXNUM                                                                #exprHexColor
-    | MINUS expression                                                      #exprNumericNegate
-    | EXCLAMATION expression                                                #exprLogicalNegate
-    | TILDE expression                                                      #exprBitwiseNegate
-    | left=expression op right=expression                                   #exprOperator
+    | unaryOp expression                                                    #exprUnaryOp
+    | left=expression binaryOp right=expression                             #exprBinaryOp
+    | funcname=ID LBRACE (expression (COMMA expression)*)? RBRACE           #exprCallFunc
 ;
 
 embedAuthorComponentField
@@ -142,11 +143,6 @@ messageComponent
     | EMBED mutate LACC embedComponent+ RACC    #componentEmbed
 ;
 
-template
-    : statement+    #templateStatement
-    | STRLIT        #templateText
-;
-
 union: statement | expression;
 
 statement
@@ -163,6 +159,11 @@ statementBlock
     : SEMICOLON #stmtBlockEmpty
     | LACC statement* RACC #stmtBlock
     | statement #stmtSingular
+;
+
+template
+    : statement+    #templateStatement
+    | STRLIT        #templateText
 ;
 
 COMMENT: '//' ~[\r\n]* -> channel(HIDDEN);
