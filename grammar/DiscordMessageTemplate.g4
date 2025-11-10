@@ -1,13 +1,26 @@
 grammar DiscordMessageTemplate;
 
+DOT: '.';
 ASSIGN: '=';
 APPEND: '+=';
 mutate: ASSIGN | APPEND;
+COLON: ':';
 SEMICOLON: ';';
 QUOTE: '"';
 ESCAPE_QUOTE: '\\"';
 HASH: '#';
 COMMA: ',';
+AMPERSAND: '&';
+BAR: '|';
+EXCLAMATION: '!';
+TILDE: '~';
+
+PLUS: '+';
+MINUS: '-';
+MULTIPLY: '*';
+DIVIDE: '/';
+MODULUS: '%';
+ROOF: '^';
 
 LBRACE: '(';
 RBRACE: ')';
@@ -19,6 +32,17 @@ RACC: '}';
 NOW: 'now';
 
 TEXT: 'text';
+
+VAR: 'var';
+
+IF: 'if';
+FOR: 'for';
+WHILE: 'while';
+DO: 'do';
+FUNCTION: 'function';
+
+TRUE: 'true' | 'yes';
+FALSE: 'false' | 'no';
 
 URL: 'url';
 NAME: 'name';
@@ -37,41 +61,62 @@ THUMBNAIL: 'thumbnail';
 FIELDS: 'fields';
 FIELD: 'field';
 
-HEX_DIGIT: [0-9a-fA-F];
 STRLIT: QUOTE (ESCAPE_QUOTE | (~[\r\n"]))* QUOTE;
+DIGIT: [0-9a-fA-F];
+ID: [a-zA-Z0-9_$]+?;
 
 WHITESPACE: [ \t\r\n] -> channel(HIDDEN);
 
-expr
+op
+    : PLUS                  #opPlus
+    | MINUS                 #opMinus
+    | MULTIPLY              #opMultiply
+    | DIVIDE                #opDivide
+    | MODULUS               #opModulus
+    | ROOF                  #opPow
+    | AMPERSAND             #opBitwiseAnd
+    | AMPERSAND AMPERSAND   #opLogicalAnd
+    | BAR                   #opBitwiseOr
+    | BAR BAR               #opLogicalOr
+;
+
+expression
     : STRLIT                                                                #exprString
+    | (TRUE | FALSE)                                                        #exprBool
+    | DIGIT (DOT DIGIT)?                                                    #exprNumber
+    | ID                                                                    #exprVar
     | NOW LBRACE RBRACE                                                     #exprNow
-    | HASH HEX_DIGIT HEX_DIGIT HEX_DIGIT (HEX_DIGIT HEX_DIGIT HEX_DIGIT)?   #exprHexColor
+    | HASH DIGIT DIGIT DIGIT (DIGIT DIGIT DIGIT)?                           #exprHexColor
+    | MINUS expression                                                      #exprNumericNegate
+    | EXCLAMATION expression                                                #exprLogicalNegate
+    | TILDE expression                                                      #exprBitwiseNegate
+    | left=expression op right=expression                                   #exprOperator
 ;
 
 embedAuthorComponentField
-    : NAME ASSIGN expr SEMICOLON    #embedAuthorComponentName
-    | ICON ASSIGN expr SEMICOLON    #embedAuthorComponentIcon
-    | URL ASSIGN expr SEMICOLON     #embedAuthorComponentUrl
+    : NAME ASSIGN expression SEMICOLON    #embedAuthorComponentName
+    | ICON ASSIGN expression SEMICOLON    #embedAuthorComponentIcon
+    | URL ASSIGN expression SEMICOLON     #embedAuthorComponentUrl
 ;
 embedAuthorComponent
-    : name=expr (COMMA icon=expr (COMMA url=expr)?)? SEMICOLON  #embedAuthorFlow
+    : name=expression (COMMA icon=expression (COMMA url=expression)?)? SEMICOLON  #embedAuthorFlow
     | AUTHOR LACC embedAuthorComponentField+ RACC               #embedAuthorObj
 ;
 embedFooterComponentField
-    : TEXT ASSIGN expr SEMICOLON    #embedFooterComponentText
-    | ICON ASSIGN expr SEMICOLON    #embedFooterComponentIcon
+    : TEXT ASSIGN expression SEMICOLON    #embedFooterComponentText
+    | ICON ASSIGN expression SEMICOLON    #embedFooterComponentIcon
 ;
 embedFooterComponent
-    : text=expr (COMMA icon=expr)? SEMICOLON        #embedFooterFlow
+    : text=expression (COMMA icon=expression)? SEMICOLON        #embedFooterFlow
     | FOOTER LACC embedFooterComponentField+ RACC   #embedFooterObj
 ;
 embedFieldComponentField
-    : TITLE ASSIGN expr SEMICOLON   #embedFieldComponentTitle
-    | TEXT ASSIGN expr SEMICOLON    #embedFieldComponentText
-    | INLINE SEMICOLON              #embedFieldComponentInline
+    : TITLE ASSIGN expression SEMICOLON     #embedFieldComponentTitle
+    | TEXT ASSIGN expression SEMICOLON      #embedFieldComponentText
+    | INLINE (TRUE | FALSE)? SEMICOLON      #embedFieldComponentInline
 ;
 embedFieldComponentPart
-    : title=expr (COMMA text=expr (COMMA INLINE)?)? SEMICOLON   #embedFieldFlow
+    : title=expression (COMMA text=expression (COMMA INLINE)?)? SEMICOLON   #embedFieldFlow
     | FIELD LACC embedFieldComponentField+ RACC                 #embedFieldObj
 ;
 embedFieldsComponent
@@ -79,26 +124,44 @@ embedFieldsComponent
     | LIDX embedFieldComponentPart+ RIDX    #embedFieldList
 ;
 embedComponent
-    : TITLE ASSIGN expr SEMICOLON           #embedTitle
-    | URL ASSIGN expr SEMICOLON             #embedUrl
-    | DESCRIPTION ASSIGN expr SEMICOLON     #embedDescription
-    | AUTHOR mutate embedAuthorComponent    #embedAuthor
-    | TIMESTAMP ASSIGN expr SEMICOLON       #embedTimestamp
-    | COLOR ASSIGN expr SEMICOLON           #embedColor
-    | FOOTER mutate embedFooterComponent    #embedFooter
-    | IMAGE ASSIGN expr SEMICOLON           #embedImage
-    | THUMBNAIL ASSIGN expr SEMICOLON       #embedThumbnail
-    | FIELDS mutate embedFieldsComponent    #embedFields
+    : TITLE ASSIGN expression SEMICOLON             #embedTitle
+    | URL ASSIGN expression SEMICOLON               #embedUrl
+    | DESCRIPTION ASSIGN expression SEMICOLON       #embedDescription
+    | AUTHOR mutate embedAuthorComponent            #embedAuthor
+    | TIMESTAMP ASSIGN expression SEMICOLON         #embedTimestamp
+    | COLOR ASSIGN expression SEMICOLON             #embedColor
+    | FOOTER mutate embedFooterComponent            #embedFooter
+    | IMAGE ASSIGN expression SEMICOLON             #embedImage
+    | THUMBNAIL ASSIGN expression SEMICOLON         #embedThumbnail
+    | FIELDS mutate embedFieldsComponent            #embedFields
 ;
 
 messageComponent
-    : TEXT ASSIGN expr SEMICOLON                #componentText
+    : TEXT ASSIGN expression SEMICOLON                #componentText
     | EMBED mutate LACC embedComponent+ RACC    #componentEmbed
 ;
 
 template
-    : messageComponent+     #templateComponents
-    | STRLIT                #templateText
+    : statement+    #templateStatement
+    | STRLIT        #templateText
+;
+
+union: statement | expression;
+
+statement
+    : messageComponent #stmtComponent
+    | EMBED DOT embedComponent #stmtEmbedComponent
+    | VAR? varname=ID ASSIGN expression #stmtAssign
+    | IF LBRACE expression RBRACE statementBlock #stmtIf
+    | FOR LBRACE init=union? SEMICOLON check=expression? SEMICOLON accumulate=union RBRACE statementBlock #stmtForI
+    | FOR LBRACE varname=ID COLON iterable=expression RBRACE statementBlock #stmtForEach
+    | WHILE LBRACE check=expression RBRACE statementBlock #stmtWhile
+    | DO statementBlock WHILE LBRACE check=expression RBRACE #stmtDoWhile
+;
+statementBlock
+    : SEMICOLON #stmtBlockEmpty
+    | LACC statement* RACC #stmtBlock
+    | statement #stmtSingular
 ;
 
 COMMENT: '//' ~[\r\n]* -> channel(HIDDEN);

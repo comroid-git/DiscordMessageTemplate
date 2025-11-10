@@ -5,7 +5,6 @@ embed = {
     description = "Embed Description";
     
     // author variants
-    author = "Kaleidox";
     author = "Kaleidox", "https://kaleidox.de/favicon.png";
     author = author {
         name = "Kaleidox";
@@ -33,13 +32,13 @@ embed = {
     fields += field {
         title = "Embed Field";
         text = "This is an Embed Field";
-        inline;
+        inline false;
     }
     fields += [
         field {
             title = "Embed Field";
             text = "This is an Embed Field";
-            inline;
+            inline yes;
         }
     ]
     
@@ -48,3 +47,5 @@ embed = {
         text = " which holds lot of Footer info";
     }
 }
+if (-6)
+    embed.author = "Kaleidox";
