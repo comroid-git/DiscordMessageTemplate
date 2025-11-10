@@ -30,6 +30,7 @@ LACC: '{';
 RACC: '}';
 
 TEXT: 'text';
+ATTACHMENT: 'attachment';
 
 VAR: 'var';
 
@@ -101,8 +102,8 @@ embedAuthorComponentField
     | URL ASSIGN expression SEMICOLON     #embedAuthorComponentUrl
 ;
 embedAuthorComponent
-    : name=expression (COMMA icon=expression (COMMA url=expression)?)? SEMICOLON  #embedAuthorFlow
-    | AUTHOR LACC embedAuthorComponentField+ RACC               #embedAuthorObj
+    : name=expression (COMMA icon=expression (COMMA url=expression)?)? SEMICOLON    #embedAuthorFlow
+    | AUTHOR LACC embedAuthorComponentField+ RACC                                   #embedAuthorObj
 ;
 embedFooterComponentField
     : TEXT ASSIGN expression SEMICOLON    #embedFooterComponentText
@@ -110,7 +111,7 @@ embedFooterComponentField
 ;
 embedFooterComponent
     : text=expression (COMMA icon=expression)? SEMICOLON        #embedFooterFlow
-    | FOOTER LACC embedFooterComponentField+ RACC   #embedFooterObj
+    | FOOTER LACC embedFooterComponentField+ RACC               #embedFooterObj
 ;
 embedFieldComponentField
     : TITLE ASSIGN expression SEMICOLON     #embedFieldComponentTitle
@@ -119,7 +120,7 @@ embedFieldComponentField
 ;
 embedFieldComponentPart
     : title=expression (COMMA text=expression (COMMA INLINE)?)? SEMICOLON   #embedFieldFlow
-    | FIELD LACC embedFieldComponentField+ RACC                 #embedFieldObj
+    | FIELD LACC embedFieldComponentField+ RACC                             #embedFieldObj
 ;
 embedFieldsComponent
     : embedFieldComponentPart               #embedFieldSingular
@@ -139,28 +140,29 @@ embedComponent
 ;
 
 messageComponent
-    : TEXT ASSIGN expression SEMICOLON                #componentText
-    | EMBED mutate LACC embedComponent+ RACC    #componentEmbed
-    | EMBED DOT embedComponent #componentEmbedToplevelMember
-    | EMBED DOT AUTHOR DOT embedAuthorComponentField #componentEmbedAuthorField
-    | EMBED DOT FOOTER DOT embedFooterComponentField #componentEmbedFooterField
+    : TEXT ASSIGN expression SEMICOLON                  #componentText
+    | ATTACHMENT mutate expression SEMICOLON            #componentAttachment
+    | EMBED mutate LACC embedComponent+ RACC            #componentEmbed
+    | EMBED DOT embedComponent                          #componentEmbedToplevelMember
+    | EMBED DOT AUTHOR DOT embedAuthorComponentField    #componentEmbedAuthorField
+    | EMBED DOT FOOTER DOT embedFooterComponentField    #componentEmbedFooterField
 ;
 
 union: statement | expression;
 
 statement
-    : messageComponent #stmtComponent
-    | VAR? varname=ID ASSIGN expression #stmtAssign
-    | IF LBRACE expression RBRACE statementBlock #stmtIf
-    | FOR LBRACE init=union? SEMICOLON check=expression? SEMICOLON accumulate=union RBRACE statementBlock #stmtForI
-    | FOR LBRACE varname=ID COLON iterable=expression RBRACE statementBlock #stmtForEach
-    | WHILE LBRACE check=expression RBRACE statementBlock #stmtWhile
-    | DO statementBlock WHILE LBRACE check=expression RBRACE #stmtDoWhile
+    : messageComponent                                                                                      #stmtComponent
+    | VAR? varname=ID ASSIGN expression                                                                     #stmtAssign
+    | IF LBRACE expression RBRACE statementBlock                                                            #stmtIf
+    | FOR LBRACE init=union? SEMICOLON check=expression? SEMICOLON accumulate=union RBRACE statementBlock   #stmtForI
+    | FOR LBRACE varname=ID COLON iterable=expression RBRACE statementBlock                                 #stmtForEach
+    | WHILE LBRACE check=expression RBRACE statementBlock                                                   #stmtWhile
+    | DO statementBlock WHILE LBRACE check=expression RBRACE                                                #stmtDoWhile
 ;
 statementBlock
-    : SEMICOLON #stmtBlockEmpty
-    | LACC statement* RACC #stmtBlock
-    | statement #stmtSingular
+    : SEMICOLON             #stmtBlockEmpty
+    | LACC statement* RACC  #stmtBlock
+    | statement             #stmtSingular
 ;
 
 template
