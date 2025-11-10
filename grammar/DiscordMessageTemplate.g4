@@ -141,13 +141,15 @@ embedComponent
 messageComponent
     : TEXT ASSIGN expression SEMICOLON                #componentText
     | EMBED mutate LACC embedComponent+ RACC    #componentEmbed
+    | EMBED DOT embedComponent #componentEmbedToplevelMember
+    | EMBED DOT AUTHOR DOT embedAuthorComponentField #componentEmbedAuthorField
+    | EMBED DOT FOOTER DOT embedFooterComponentField #componentEmbedFooterField
 ;
 
 union: statement | expression;
 
 statement
     : messageComponent #stmtComponent
-    | EMBED DOT embedComponent #stmtEmbedComponent
     | VAR? varname=ID ASSIGN expression #stmtAssign
     | IF LBRACE expression RBRACE statementBlock #stmtIf
     | FOR LBRACE init=union? SEMICOLON check=expression? SEMICOLON accumulate=union RBRACE statementBlock #stmtForI
