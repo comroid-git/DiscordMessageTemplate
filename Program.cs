@@ -1,4 +1,6 @@
-﻿namespace DiscordMessageTemplate;
+﻿using DiscordMessageTemplate.Antlr;
+
+namespace DiscordMessageTemplate;
 
 public class Program
 {

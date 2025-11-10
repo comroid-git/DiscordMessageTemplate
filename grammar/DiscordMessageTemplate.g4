@@ -66,22 +66,35 @@ HEXNUM: ('0x' | '#') [0-9a-fA-F]+;
 
 WHITESPACE: [ \t\r\n] -> channel(HIDDEN);
 
+unaryOpNumericalNegate: MINUS;
+unaryOpLogicalNegate: EXCLAMATION;
+unaryOpBitwiseNegate: TILDE;
 unaryOp
-    : MINUS         #unaryOpNumericalNegate
-    | EXCLAMATION   #unaryOpLogicalNegate
-    | TILDE         #unaryOpBitwiseNegate
+    : unaryOpNumericalNegate
+    | unaryOpLogicalNegate
+    | unaryOpBitwiseNegate
 ;
+binaryOpPlus: PLUS;
+binaryOpMinus: MINUS;
+binaryOpMultiply: MULTIPLY;
+binaryOpDivide: DIVIDE;
+binaryOpModulus: MODULUS;
+binaryOpPow: ROOF;
+binaryOpBitwiseAnd: AMPERSAND;
+binaryOpLogicalAnd: AMPERSAND AMPERSAND;
+binaryOpBitwiseOr: BAR;
+binaryOpLogicalOr: BAR BAR;
 binaryOp
-    : PLUS                  #binaryOpPlus
-    | MINUS                 #binaryOpMinus
-    | MULTIPLY              #binaryOpMultiply
-    | DIVIDE                #binaryOpDivide
-    | MODULUS               #binaryOpModulus
-    | ROOF                  #binaryOpPow
-    | AMPERSAND             #binaryOpBitwiseAnd
-    | AMPERSAND AMPERSAND   #binaryOpLogicalAnd
-    | BAR                   #binaryOpBitwiseOr
-    | BAR BAR               #binaryOpLogicalOr
+    : binaryOpPlus
+    | binaryOpMinus
+    | binaryOpMultiply
+    | binaryOpDivide
+    | binaryOpModulus
+    | binaryOpPow
+    | binaryOpBitwiseAnd
+    | binaryOpLogicalAnd
+    | binaryOpBitwiseOr
+    | binaryOpLogicalOr
 ;
 
 expression

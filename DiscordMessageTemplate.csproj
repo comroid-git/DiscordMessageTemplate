@@ -28,7 +28,7 @@
         <Antlr4 Include="grammar/DiscordMessageTemplate.g4">
             <Generator>MSBuild:Compile</Generator>
             <Package>DiscordMessageTemplate.Antlr</Package>
-            <Listener>True</Listener>
+            <Listener>False</Listener>
             <Visitor>True</Visitor>
         </Antlr4>
     </ItemGroup>

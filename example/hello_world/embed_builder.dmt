@@ -26,8 +26,6 @@ embed = {
     
     image = "https://kaleidox.de/image.png";
     
-    thumbnail = "https://kaleidox.de/image.png";
-    
     // can be += or = for its the first field
     fields += field {
         title = "Embed Field";
