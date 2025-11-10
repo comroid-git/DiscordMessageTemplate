@@ -62,8 +62,9 @@ FIELDS: 'fields';
 FIELD: 'field';
 
 STRLIT: QUOTE (ESCAPE_QUOTE | (~[\r\n"]))* QUOTE;
-DIGIT: [0-9a-fA-F];
+NUM: [0-9]+;
 ID: [a-zA-Z0-9_$]+?;
+HEXNUM: ('0x' | '#') [0-9a-fA-F]+;
 
 WHITESPACE: [ \t\r\n] -> channel(HIDDEN);
 
@@ -83,10 +84,10 @@ op
 expression
     : STRLIT                                                                #exprString
     | (TRUE | FALSE)                                                        #exprBool
-    | DIGIT (DOT DIGIT)?                                                    #exprNumber
+    | NUM (DOT NUM)?                                                        #exprNumber
     | ID                                                                    #exprVar
     | NOW LBRACE RBRACE                                                     #exprNow
-    | HASH DIGIT DIGIT DIGIT (DIGIT DIGIT DIGIT)?                           #exprHexColor
+    | HEXNUM                                                                #exprHexColor
     | MINUS expression                                                      #exprNumericNegate
     | EXCLAMATION expression                                                #exprLogicalNegate
     | TILDE expression                                                      #exprBitwiseNegate
