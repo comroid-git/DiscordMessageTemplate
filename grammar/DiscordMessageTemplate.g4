@@ -56,8 +56,8 @@ IMAGE: 'image';
 FIELDS: 'fields';
 FIELD: 'field';
 
-TRUE: 'true' | 'yes' | 'on' | 'enable''d'? | 'for' | 'based' | 'indisputable';
-FALSE: 'false' | 'no' | 'off' | 'disable''d'? | 'against' | 'biased' | 'reconsiderable';
+TRUE: 'true' | 'yes' | 'on' | 'enable''d'? | 'towards' | 'based' | 'indisputable' | 'y''e'?('a'('h'|'y')?)? | 'hooray' | 'lesgo';
+FALSE: 'false' | 'no' | 'off' | 'disable''d'? | 'against' | 'biased' | 'reconsiderable' | 'n'[ao]+[yh]? | 'boo' | 'shut';
 
 STRLIT: QUOTE (ESCAPE_QUOTE | (~[\r\n"]))* QUOTE;
 NUM: [0-9]+;
