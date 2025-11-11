@@ -169,6 +169,7 @@ statement
     | FOR LBRACE varname=ID COLON iterable=expression RBRACE statementBlock                                 #stmtForEach
     | WHILE LBRACE check=expression RBRACE statementBlock                                                   #stmtWhile
     | DO statementBlock WHILE LBRACE check=expression RBRACE                                                #stmtDoWhile
+    | FUNCTION name=ID LBRACE (ID (COMMA ID)+)? RBRACE statementBlock                                       #stmtDeclFunc
 ;
 statementBlock
     : SEMICOLON             #stmtBlockEmpty
