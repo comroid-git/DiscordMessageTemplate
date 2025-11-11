@@ -56,8 +56,8 @@ IMAGE: 'image';
 FIELDS: 'fields';
 FIELD: 'field';
 
-TRUE: 'true' | 'yes';
-FALSE: 'false' | 'no';
+TRUE: 'true' | 'yes' | 'on' | 'enable''d'? | 'for' | 'based' | 'indisputable';
+FALSE: 'false' | 'no' | 'off' | 'disable''d'? | 'against' | 'biased' | 'reconsiderable';
 
 STRLIT: QUOTE (ESCAPE_QUOTE | (~[\r\n"]))* QUOTE;
 NUM: [0-9]+;
