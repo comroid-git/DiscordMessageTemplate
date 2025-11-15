@@ -1,8 +1,39 @@
-﻿namespace DiscordMessageTemplate.Compiler;
+﻿using Antlr4.Runtime;
+
+namespace DiscordMessageTemplate.Compiler;
 
 public interface ITemplateComponent
 {
     object? Evaluate(TemplateContext context, params object?[] args);
+}
+
+public class TemplateDocument : ITemplateComponent
+{
+    public TemplateDocument(params ITemplateComponent[] statements)
+    {
+        this.statements = statements;
+    }
+
+    private readonly ITemplateComponent[] statements;
+
+    public object? Evaluate(TemplateContext context, params object?[] args)
+    {
+        foreach (var statement in statements)
+            statement.Evaluate(context);
+        return null;
+    }
+}
+
+public class CompiledCode : ITemplateComponent
+{
+    public CompiledCode(ParserRuleContext context)
+    {
+        _context = context;
+    }
+
+    private readonly ParserRuleContext _context;
+
+    public object? Evaluate(TemplateContext context, params object?[] args) => null;
 }
 
 public class ConstantComponent<T> : ITemplateComponent

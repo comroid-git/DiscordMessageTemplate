@@ -32,6 +32,7 @@ RACC: '}';
 TEXT: 'text';
 ATTACHMENT: 'attachment';
 
+CONST: 'const';
 VAR: 'var';
 
 IF: 'if';
@@ -180,8 +181,9 @@ statementBlock
 ;
 
 template
-    : statement+    #templateStatement
-    | STRLIT        #templateText
+    : CONST name=ID ASSIGN expression SEMICOLON     #templateConst
+    | statement+                                    #templateStatement
+    | STRLIT                                        #templateText
 ;
 
 COMMENT: '//' ~[\r\n]* -> channel(HIDDEN);

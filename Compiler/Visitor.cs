@@ -23,7 +23,7 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
     {
         var text = context.HEXNUM().GetText();
         var i = text.IndexOfAny(['#', 'x']);
-        if (i != -1) throw new Exception("Invalid hex number: " + text);
+        if (i is not 0 and not 1) throw new Exception("Invalid hex number: " + text);
         text = text[(i + 1)..];
         return new ConstantComponent<int>(int.Parse(text));
     }
@@ -444,6 +444,22 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
         var parameters = context.ID()[1..].Select(tn => tn.GetText()).ToArray();
         return new ContextEmittingComponent(ctx => ctx.SetFunction<FunctionComponent>(name, new FunctionComponent(parameters, exec)));
     }
+
+    public override ITemplateComponent VisitTemplateConst(DiscordMessageTemplateParser.TemplateConstContext context)
+    {
+        var expr = Visit(context.expression());
+        RootContext.Instance.Constants[context.name.Text] = expr.Evaluate(RootContext.Instance);
+        return new CompiledCode(context);
+    }
+
+    public override ITemplateComponent VisitTemplateStatement(DiscordMessageTemplateParser.TemplateStatementContext context)
+    {
+        var statements = context.statement().Select(Visit).ToArray();
+        return new TemplateDocument(statements);
+    }
+
+    public override ITemplateComponent VisitTemplateText(DiscordMessageTemplateParser.TemplateTextContext context) =>
+        new ConstantComponent<string>(context.STRLIT().GetText());
 }
 
 public static class OperatorExt

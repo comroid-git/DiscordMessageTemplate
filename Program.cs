@@ -1,4 +1,6 @@
-﻿using DiscordMessageTemplate.Antlr;
+﻿using Antlr4.Runtime;
+using DiscordMessageTemplate.Antlr;
+using DiscordMessageTemplate.Compiler;
 
 namespace DiscordMessageTemplate;
 
@@ -9,11 +11,11 @@ public class Program
         if (args.Length == 0)
         {
             // read using stdio mode
-            var buf = "";
-            Console.CancelKeyPress += (s, e) => Evaluate(buf);
+            var buf = new[]{""};
+            Console.CancelKeyPress += (_, _) => Evaluate(buf[0]);
             int r;
             while ((r = Console.Read()) != -1)
-                buf += (char)r;
+                buf[0] += (char)r;
         }
         else
         {
@@ -26,5 +28,16 @@ public class Program
 
     public static MessageData Evaluate(string template)
     {
+        var input = new AntlrInputStream(new StringReader(template));
+        var lexer = new DiscordMessageTemplateLexer(input);
+        var tokens = new CommonTokenStream(lexer);
+        var parser = new DiscordMessageTemplateParser(tokens);
+
+        var visitor = new Visitor();
+        var file = parser.template();
+        var templateRoot = visitor.Visit(file);
+
+        templateRoot.Evaluate(RootContext.Instance);
+        return RootContext.Instance.Message;
     }
 }

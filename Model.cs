@@ -3,22 +3,33 @@ using DiscordMessageTemplate.Compiler;
 
 namespace DiscordMessageTemplate;
 
-public sealed class TemplateContext(TemplateContext? parent = null)
+public abstract class TemplateContext(TemplateContext? parent, MessageData? message)
 {
     private readonly TemplateContext? _parent = parent;
     private readonly Dictionary<string, object?> _variables = new();
     private readonly Dictionary<string, FunctionComponent> _functions = new();
 
-    public IReadOnlyDictionary<string, object?> Variables => _variables
-        .Concat(_parent?.Variables ?? [])
+    public virtual IReadOnlyDictionary<string, object?> Variables => _variables
+        .Concat(_parent?.Variables ?? new Dictionary<string, object?>())
         .ToDictionary(e => e.Key, e => e.Value);
 
     public IReadOnlyDictionary<string, FunctionComponent> Functions => _functions
-        .Concat(_parent?.Functions ?? [])
+        .Concat(_parent?.Functions ?? new Dictionary<string, FunctionComponent>())
         .ToDictionary(e => e.Key, e => e.Value);
 
-    public MessageData Message { get; } = new();
+    public MessageData Message { get; } = message ?? new MessageData();
     public object? ReturnValue { get; set; }
+
+    public RootContext Root
+    {
+        get
+        {
+            var it = this;
+            while (it._parent != null)
+                it = it._parent;
+            return (RootContext)it;
+        }
+    }
 
     public T? SetVariable<T>(string key, T value, bool local = false)
     {
@@ -52,9 +63,30 @@ public sealed class TemplateContext(TemplateContext? parent = null)
 
     public T Sub<T>(Func<TemplateContext, T> action)
     {
-        var sub = new TemplateContext(this);
+        var sub = new SubContext(this);
         return action(sub);
     }
+}
+
+internal sealed class SubContext : TemplateContext
+{
+    internal SubContext(TemplateContext parent) : base(parent, parent.Message)
+    {
+    }
+}
+
+public sealed class RootContext : TemplateContext
+{
+    public static readonly RootContext Instance = new();
+
+    public override IReadOnlyDictionary<string, object?> Variables => Constants.Concat(base.Variables)
+        .ToDictionary(e => e.Key, e => e.Value);
+
+    private RootContext() : base(null, new MessageData())
+    {
+    }
+
+    public readonly Dictionary<string, object?> Constants = new();
 }
 
 public sealed class MessageData
