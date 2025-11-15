@@ -38,6 +38,7 @@ CONST: 'const';
 VAR: 'var';
 
 IF: 'if';
+ELSE: 'else';
 FOR: 'for';
 WHILE: 'while';
 DO: 'do';
@@ -172,7 +173,7 @@ union: statement | expression;
 statement
     : messageComponent                                                                                      #stmtComponent
     | VAR? varname=ID ASSIGN expression                                                                     #stmtAssign
-    | IF LBRACE expression RBRACE statementBlock                                                            #stmtIf
+    | IF LBRACE expression RBRACE if=statementBlock (ELSE else=statementBlock)?                             #stmtIf
     | FOR LBRACE init=union? SEMICOLON check=expression? SEMICOLON accumulate=union? RBRACE statementBlock  #stmtForI
     | FOR LBRACE VAR? varname=ID COLON iterable=expression RBRACE statementBlock                            #stmtForEach
     | WHILE LBRACE check=expression RBRACE statementBlock                                                   #stmtWhile

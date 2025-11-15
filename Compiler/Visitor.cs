@@ -389,11 +389,13 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
     public override ITemplateComponent VisitStmtIf(DiscordMessageTemplateParser.StmtIfContext context)
     {
         var check = Visit(context.expression());
-        var exec = Visit(context.statementBlock());
+        var execIf = Visit(context.@if);
+        var execElse = Visit(context.@else);
         return new ContextEmittingComponent(ctx => ctx.Sub(sub =>
         {
             if ((bool?)check.Evaluate(sub) == true)
-                exec.Evaluate(sub);
+                execIf.Evaluate(sub);
+            else execElse.Evaluate(sub);
         }));
     }
 
