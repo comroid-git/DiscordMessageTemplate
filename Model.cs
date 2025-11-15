@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 using Antlr4.Runtime;
 using DiscordMessageTemplate.Compiler;
 
@@ -14,7 +15,7 @@ public abstract class TemplateContext(TemplateContext? parent, MessageData? mess
         .Concat(_parent?.Variables ?? new Dictionary<string, object?>())
         .ToDictionary(e => e.Key, e => e.Value);
 
-    public IReadOnlyDictionary<string, FunctionComponent> Functions => _functions
+    public virtual IReadOnlyDictionary<string, FunctionComponent> Functions => _functions
         .Concat(_parent?.Functions ?? new Dictionary<string, FunctionComponent>())
         .ToDictionary(e => e.Key, e => e.Value);
 
@@ -82,12 +83,19 @@ public sealed class RootContext : TemplateContext
 
     public override IReadOnlyDictionary<string, object?> Variables => Constants.Concat(base.Variables)
         .ToDictionary(e => e.Key, e => e.Value);
+    public override IReadOnlyDictionary<string, FunctionComponent> Functions => SystemFunctions.Concat(base.Functions)
+        .ToDictionary(e => e.Key, e => e.Value);
 
     private RootContext() : base(null, new MessageData())
     {
     }
 
     public readonly Dictionary<string, object?> Constants = new();
+
+    public readonly ReadOnlyDictionary<string, FunctionComponent> SystemFunctions = new(new Dictionary<string, FunctionComponent>
+    {
+        { "now", new FunctionComponent([], new ContextComputedComponent<DateTime>(_ => DateTime.Now)) }
+    });
 }
 
 public sealed class MessageData
@@ -188,4 +196,5 @@ public sealed class MessageEmbedField
 }
 
 public sealed class ParseException(string message, IToken srcPos) : Exception(message + '@' + srcPos.ToSrcPos());
+
 public sealed class RuntimeException(string message, IToken srcPos) : Exception(message + '@' + srcPos.ToSrcPos());

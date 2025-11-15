@@ -198,6 +198,14 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
         });
     }
 
+    public override ITemplateComponent VisitEmbedFieldList(DiscordMessageTemplateParser.EmbedFieldListContext context) =>
+        new ContextComputedComponent<MessageEmbedField[]>(ctx =>
+            context.embedFieldComponentPart()
+                .Select(Visit)
+                .Select(comp => comp.Evaluate(ctx))
+                .Cast<MessageEmbedField>()
+                .ToArray());
+
     public override ITemplateComponent VisitEmbedAuthorFlow(DiscordMessageTemplateParser.EmbedAuthorFlowContext context)
     {
         var name = Visit(context.name) ?? throw new ParseException("missing embed.author.name", context.Start);
@@ -453,6 +461,8 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
     public override ITemplateComponent VisitStmtDeclFunc(DiscordMessageTemplateParser.StmtDeclFuncContext context)
     {
         var name = context.name.Text;
+        if (RootContext.Instance.SystemFunctions.ContainsKey(name))
+            throw new RuntimeException($"cannot rebind system function '{name}'", context.name);
         var exec = Visit(context.statementBlock());
         var parameters = context.ID()[1..].Select(tn => tn.GetText()).ToArray();
         return new ContextEmittingComponent(ctx => ctx.SetFunction<FunctionComponent>(name, new FunctionComponent(parameters, exec)));

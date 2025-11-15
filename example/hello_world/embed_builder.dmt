@@ -35,7 +35,7 @@ embed = {
     fields += [
         field {
             title = "Embed Field";
-            text = "This is an Embed Field";
+            text = "This is an inline Embed Field";
             inline yes;
         }
     ]
@@ -48,5 +48,4 @@ embed = {
 if (6 < -1) {
     embed.author = "Kaleidox";
     embed.footer.text = "foot";
-    embed.fields += "hello", "world";
-}
+} else embed.fields += "hello", "world";
