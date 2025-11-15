@@ -114,7 +114,7 @@ embedAuthorComponentField
     | URL ASSIGN expression SEMICOLON     #embedAuthorComponentUrl
 ;
 embedAuthorComponent
-    : name=expression (COMMA icon=expression (COMMA url=expression)?)? SEMICOLON    #embedAuthorFlow
+    : name=expression (COMMA url=expression (COMMA icon=expression)?)? SEMICOLON    #embedAuthorFlow
     | AUTHOR LACC embedAuthorComponentField+ RACC                                   #embedAuthorObj
 ;
 embedFooterComponentField
@@ -131,7 +131,7 @@ embedFieldComponentField
     | INLINE (TRUE | FALSE)? SEMICOLON      #embedFieldComponentInline
 ;
 embedFieldComponentPart
-    : title=expression (COMMA text=expression (COMMA INLINE)?)? SEMICOLON   #embedFieldFlow
+    : title=expression COMMA text=expression (COMMA INLINE)? SEMICOLON      #embedFieldFlow
     | FIELD LACC embedFieldComponentField+ RACC                             #embedFieldObj
 ;
 embedFieldsComponent

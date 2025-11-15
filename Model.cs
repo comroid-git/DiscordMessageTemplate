@@ -12,33 +12,80 @@ public sealed class TemplateContext
 
 public sealed class MessageData
 {
-    [JsonPropertyName("content")] public string Content { get; set; } = "";
-    [JsonPropertyName("attachments")] public List<MessageAttachment> Attachments { get; set; }
-    [JsonPropertyName("embeds")] public List<MessageEmbed> Embeds { get; set; }
+    [JsonPropertyName("content")] public string? Content { get; set; }
+    [JsonPropertyName("attachments")] public List<MessageAttachment> Attachments { get; } = [];
+    [JsonPropertyName("embeds")] public List<MessageEmbed> Embeds { get; } = [];
+
+    [JsonIgnore]
+    public MessageEmbed Embed
+    {
+        get
+        {
+            if (Embeds.Count != 0)
+                return Embeds[0];
+            var embed = new MessageEmbed();
+            Embeds.Add(embed);
+            return embed;
+        }
+    }
 }
 
 public sealed class MessageAttachment
 {
-    [JsonPropertyName("url")] public string Url { get; set; }
+    [JsonPropertyName("url")] public string Url { get; init; }
 }
 
 public sealed class MessageEmbed
 {
+    private MessageEmbedAuthor? _author;
+    private MessageEmbedImage? _image;
+    private MessageEmbedFooter? _footer;
     [JsonPropertyName("title")] public string? Title { get; set; }
     [JsonPropertyName("type")] public string Type { get; } = "rich";
     [JsonPropertyName("description")] public string? Description { get; set; }
     [JsonPropertyName("url")] public string? Url { get; set; }
     [JsonPropertyName("timestamp")] public DateTime? Timestamp { get; set; }
     [JsonPropertyName("color")] public int? Color { get; set; }
-    [JsonPropertyName("author")] public MessageEmbedAuthor? Author { get; set; }
-    [JsonPropertyName("image")] public MessageEmbedImage? Image { get; set; }
-    [JsonPropertyName("footer")] public MessageEmbedFooter? Footer { get; set; }
-    [JsonPropertyName("fields")] public List<MessageEmbedField>? Fields { get; set; }
+
+    [JsonPropertyName("author")]
+    public MessageEmbedAuthor Author
+    {
+        get => _author ??= new MessageEmbedAuthor();
+        set => _author = value;
+    }
+
+    [JsonPropertyName("image")]
+    public MessageEmbedImage Image
+    {
+        get => _image ??= new MessageEmbedImage();
+        set => _image = value;
+    }
+
+    [JsonPropertyName("footer")]
+    public MessageEmbedFooter Footer
+    {
+        get => _footer ??= new MessageEmbedFooter();
+        set => _footer = value;
+    }
+
+    [JsonPropertyName("fields")] public List<MessageEmbedField> Fields { get; } = [];
+
+    [JsonIgnore]
+    public MessageEmbedField LastField
+    {
+        get
+        {
+            if (Fields.Count == 0)
+                Fields.Add(new MessageEmbedField());
+            return Fields[^1];
+        }
+    }
 }
 
 public sealed class MessageEmbedAuthor
 {
     [JsonPropertyName("name")] public string Name { get; set; }
+    [JsonPropertyName("url")] public string? Url { get; set; }
     [JsonPropertyName("icon_url")] public string? IconUrl { get; set; }
 }
 

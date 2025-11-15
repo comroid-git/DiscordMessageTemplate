@@ -5,7 +5,7 @@ public interface ITemplateComponent
     object? Evaluate(TemplateContext context, params object?[] args);
 }
 
-public sealed class ConstantComponent<T> : ITemplateComponent
+public class ConstantComponent<T> : ITemplateComponent
 {
     public ConstantComponent(T value)
     {
@@ -17,7 +17,7 @@ public sealed class ConstantComponent<T> : ITemplateComponent
     public object? Evaluate(TemplateContext context, params object?[] args) => _value;
 }
 
-public sealed class ContextComputedComponent<T> : ITemplateComponent
+public class ContextComputedComponent<T> : ITemplateComponent
 {
     public ContextComputedComponent(Func<TemplateContext, T> source)
     {
@@ -29,5 +29,21 @@ public sealed class ContextComputedComponent<T> : ITemplateComponent
     public object? Evaluate(TemplateContext context, params object?[] args)
     {
         return _source(context);
+    }
+}
+
+public class ContextEmittingComponent : ITemplateComponent
+{
+    public ContextEmittingComponent(Action<TemplateContext> emitter)
+    {
+        _emitter = emitter;
+    }
+
+    private readonly Action<TemplateContext> _emitter;
+
+    public object? Evaluate(TemplateContext context, params object?[] args)
+    {
+        _emitter(context);
+        return null;
     }
 }

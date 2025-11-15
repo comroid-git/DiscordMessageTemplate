@@ -59,6 +59,286 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
         var op = context.binaryOp();
         return new ContextComputedComponent<object?>(ctx => op.Evaluate(left.Evaluate(ctx), right.Evaluate(ctx)));
     }
+
+    public override ITemplateComponent VisitComponentText(DiscordMessageTemplateParser.ComponentTextContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx => ctx.Message.Content = str.Evaluate(ctx)?.ToString());
+    }
+
+    public override ITemplateComponent VisitComponentAttachment(DiscordMessageTemplateParser.ComponentAttachmentContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var url = str.Evaluate(ctx)?.ToString();
+            if (url != null)
+                ctx.Message.Attachments.Add(new MessageAttachment { Url = url });
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedTitle(DiscordMessageTemplateParser.EmbedTitleContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var text = str.Evaluate(ctx)?.ToString();
+            if (text != null)
+                ctx.Message.Embed.Title = text;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedUrl(DiscordMessageTemplateParser.EmbedUrlContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var url = str.Evaluate(ctx)?.ToString();
+            if (url != null)
+                ctx.Message.Embed.Url = url;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedDescription(DiscordMessageTemplateParser.EmbedDescriptionContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var text = str.Evaluate(ctx)?.ToString();
+            if (text != null)
+                ctx.Message.Embed.Description = text;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedTimestamp(DiscordMessageTemplateParser.EmbedTimestampContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var time = (DateTime?)str.Evaluate(ctx);
+            if (null != time)
+                ctx.Message.Embed.Timestamp = time;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedColor(DiscordMessageTemplateParser.EmbedColorContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var color = (int?)str.Evaluate(ctx);
+            if (null != color)
+                ctx.Message.Embed.Color = color;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedImage(DiscordMessageTemplateParser.EmbedImageContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var url = str.Evaluate(ctx)?.ToString();
+            if (url != null)
+                ctx.Message.Embed.Image = new MessageEmbedImage { Url = url };
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedAuthor(DiscordMessageTemplateParser.EmbedAuthorContext context)
+    {
+        var author = Visit(context.embedAuthorComponent());
+        return new ContextEmittingComponent(ctx =>
+        {
+            // if not append/mutate
+            if (context.mutate().GetToken(DiscordMessageTemplateLexer.APPEND, 0) == null)
+                // clear author
+                ctx.Message.Embed.Author = null;
+            // apply author
+            author.Evaluate(ctx);
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFooter(DiscordMessageTemplateParser.EmbedFooterContext context)
+    {
+        var footer = Visit(context.embedFooterComponent());
+        return new ContextEmittingComponent(ctx =>
+        {
+            // if not append/mutate
+            if (context.mutate().GetToken(DiscordMessageTemplateLexer.APPEND, 0) == null)
+                // clear footer
+                ctx.Message.Embed.Footer = null;
+            // apply footer
+            footer.Evaluate(ctx);
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFields(DiscordMessageTemplateParser.EmbedFieldsContext context)
+    {
+        var field = Visit(context.embedFieldsComponent());
+        return new ContextEmittingComponent(ctx =>
+        {
+            // if not append/mutate
+            if (context.mutate().GetToken(DiscordMessageTemplateLexer.APPEND, 0) == null)
+                // clear fields
+                ctx.Message.Embed.Fields.Clear();
+            // apply field
+            field.Evaluate(ctx);
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedAuthorFlow(DiscordMessageTemplateParser.EmbedAuthorFlowContext context)
+    {
+        var name = Visit(context.name);
+        var url = context.url != null ? Visit(context.url) : null;
+        var icon = context.icon != null ? Visit(context.icon) : null;
+        return new ContextEmittingComponent(ctx =>
+        {
+            ctx.Message.Embed.Author = new MessageEmbedAuthor
+            {
+                Name = name.Evaluate(ctx)?.ToString() ?? throw new ArgumentNullException("embed.author.name"),
+                Url = url?.Evaluate(ctx)?.ToString(),
+                IconUrl = icon?.Evaluate(ctx)?.ToString()
+            };
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedAuthorObj(DiscordMessageTemplateParser.EmbedAuthorObjContext context)
+    {
+        return new ContextEmittingComponent(ctx =>
+        {
+            ctx.Message.Embed.Author = new MessageEmbedAuthor();
+            foreach (var authorProperty in context.embedAuthorComponentField().Select(Visit))
+                authorProperty.Evaluate(ctx);
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedAuthorComponentName(DiscordMessageTemplateParser.EmbedAuthorComponentNameContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var name = str.Evaluate(ctx)?.ToString();
+            if (name != null)
+                ctx.Message.Embed.Author.Name = name;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedAuthorComponentUrl(DiscordMessageTemplateParser.EmbedAuthorComponentUrlContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var url = str.Evaluate(ctx)?.ToString();
+            if (url != null)
+                ctx.Message.Embed.Author.Url = url;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedAuthorComponentIcon(DiscordMessageTemplateParser.EmbedAuthorComponentIconContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var iconUrl = str.Evaluate(ctx)?.ToString();
+            if (iconUrl != null)
+                ctx.Message.Embed.Author.IconUrl = iconUrl;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFooterFlow(DiscordMessageTemplateParser.EmbedFooterFlowContext context)
+    {
+        var text = Visit(context.text);
+        var icon = context.icon != null ? Visit(context.icon) : null;
+        return new ContextEmittingComponent(ctx =>
+        {
+            ctx.Message.Embed.Footer = new MessageEmbedFooter
+            {
+                Text = text.Evaluate(ctx)?.ToString() ?? throw new ArgumentNullException("embed.footer.text"),
+                IconUrl = icon?.Evaluate(ctx)?.ToString()
+            };
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFooterObj(DiscordMessageTemplateParser.EmbedFooterObjContext context)
+    {
+        return new ContextEmittingComponent(ctx =>
+        {
+            ctx.Message.Embed.Footer = new MessageEmbedFooter();
+            foreach (var footerProperty in context.embedFooterComponentField().Select(Visit))
+                footerProperty.Evaluate(ctx);
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFooterComponentText(DiscordMessageTemplateParser.EmbedFooterComponentTextContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var text = str.Evaluate(ctx)?.ToString();
+            if (text != null)
+                ctx.Message.Embed.Footer.Text = text;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFooterComponentIcon(DiscordMessageTemplateParser.EmbedFooterComponentIconContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var iconUrl = str.Evaluate(ctx)?.ToString();
+            if (iconUrl != null)
+                ctx.Message.Embed.Footer.IconUrl = iconUrl;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFieldFlow(DiscordMessageTemplateParser.EmbedFieldFlowContext context)
+    {
+        var title = Visit(context.title);
+        var text = Visit(context.text);
+        return new ContextEmittingComponent(ctx =>
+        {
+            ctx.Message.Embed.Fields.Add(new MessageEmbedField
+            {
+                Title = title.Evaluate(ctx)?.ToString() ?? throw new ArgumentNullException("embed.field.title"),
+                Text = text.Evaluate(ctx)?.ToString() ?? throw new ArgumentNullException("embed.field.text"),
+                Inline = context.INLINE() != null
+            });
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFieldObj(DiscordMessageTemplateParser.EmbedFieldObjContext context)
+    {
+        return new ContextEmittingComponent(ctx =>
+        {
+            ctx.Message.Embed.Fields.Add(new MessageEmbedField());
+            foreach (var fieldProperty in context.embedFieldComponentField().Select(Visit))
+                fieldProperty.Evaluate(ctx);
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFieldComponentTitle(DiscordMessageTemplateParser.EmbedFieldComponentTitleContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var title = str.Evaluate(ctx)?.ToString();
+            if (title != null)
+                ctx.Message.Embed.LastField.Title = title;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFieldComponentText(DiscordMessageTemplateParser.EmbedFieldComponentTextContext context)
+    {
+        var str = Visit(context.expression());
+        return new ContextEmittingComponent(ctx =>
+        {
+            var text = str.Evaluate(ctx)?.ToString();
+            if (text != null)
+                ctx.Message.Embed.LastField.Text = text;
+        });
+    }
+
+    public override ITemplateComponent VisitEmbedFieldComponentInline(DiscordMessageTemplateParser.EmbedFieldComponentInlineContext context) =>
+        new ContextEmittingComponent(ctx => ctx.Message.Embed.LastField.Inline = context.TRUE() != null);
 }
 
 public static class OperatorExt
