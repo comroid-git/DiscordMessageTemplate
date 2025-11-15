@@ -4,45 +4,52 @@ using Antlr4.Runtime;
 using CommandLine;
 using DiscordMessageTemplate.Antlr;
 using DiscordMessageTemplate.Compiler;
+using Parser = CommandLine.Parser;
 
 namespace DiscordMessageTemplate;
 
 public class CommandLineOptions
 {
+    public static CommandLineOptions Current { get; internal set; }
+
     [Option('n', "nulls", HelpText = "Include null values")]
     public bool PrintNulls { get; set; }
 
-    [Value(0, HelpText = "Input string")]
-    public string Input { get; set; }
+    [Option('p', "pretty", HelpText = "Pretty printing")]
+    public bool Prettify { get; set; }
+
+    [Value(0, HelpText = "Input path", Required = true)]
+    public string InputFile { get; set; }
 }
 
 public class Program
 {
     public static void Main(params string[] args)
     {
-        if (args.Length == 0)
-        {
-            // read using stdio mode
-            var buf = new[] { "" };
-            Console.CancelKeyPress += (_, _) => EvalAndPrintTemplate(buf[0]);
-            int r;
-            while ((r = Console.Read()) != -1)
-                buf[0] += (char)r;
-        }
-        else
-        {
-            // read from file
-            var path = string.Join(" ", args);
-            var template = File.ReadAllText(path);
-            EvalAndPrintTemplate(template);
-        }
+        Parser.Default.ParseArguments<CommandLineOptions>(args)
+            .WithParsed(result =>
+            {
+                CommandLineOptions.Current = result;
+                var template = File.ReadAllText(result.InputFile);
+                EvalAndPrintTemplate(template);
+            });
+    }
+
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static string EvalTemplate(string template)
+    {
+        var result = Evaluate(template);
+        return JsonSerializer.Serialize(result,
+            new JsonSerializerOptions
+            {
+                WriteIndented = CommandLineOptions.Current.Prettify,
+                DefaultIgnoreCondition = CommandLineOptions.Current.PrintNulls ? JsonIgnoreCondition.Never : JsonIgnoreCondition.WhenWritingNull
+            });
     }
 
     private static void EvalAndPrintTemplate(string template)
     {
-        var result = Evaluate(template);
-        var json = JsonSerializer.Serialize(result,
-            new JsonSerializerOptions { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
+        var json = EvalTemplate(template);
         Console.WriteLine(json);
     }
 

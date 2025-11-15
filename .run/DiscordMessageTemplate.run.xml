@@ -1,7 +1,7 @@
 ﻿<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="DiscordMessageTemplate" type="DotNetProject" factoryName=".NET Project">
     <option name="EXE_PATH" value="$PROJECT_DIR$/csharp/bin/net6.0/DiscordMessageTemplate.exe" />
-    <option name="PROGRAM_PARAMETERS" value="hello_world/embed_builder.dmt" />
+    <option name="PROGRAM_PARAMETERS" value="-p hello_world/embed_builder.dmt" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/example" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <option name="USE_EXTERNAL_CONSOLE" value="0" />
