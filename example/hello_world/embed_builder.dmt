@@ -45,8 +45,8 @@ embed = {
         text = " which holds lot of Footer info";
     }
 }
-if (-6) {
+if (6 < -1) {
     embed.author = "Kaleidox";
     embed.footer.text = "foot";
-    embed.fields += "hello";
+    embed.fields += "hello", "world";
 }

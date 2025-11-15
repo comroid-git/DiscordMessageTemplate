@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Antlr4.Runtime;
 using DiscordMessageTemplate.Compiler;
 
 namespace DiscordMessageTemplate;
@@ -185,3 +186,6 @@ public sealed class MessageEmbedField
     [JsonPropertyName("value")] public string Text { get; set; }
     [JsonPropertyName("inline")] public bool? Inline { get; set; } = false;
 }
+
+public sealed class ParseException(string message, IToken srcPos) : Exception(message + '@' + srcPos.ToSrcPos());
+public sealed class RuntimeException(string message, IToken srcPos) : Exception(message + '@' + srcPos.ToSrcPos());

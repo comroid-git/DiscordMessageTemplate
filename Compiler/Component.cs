@@ -2,6 +2,21 @@
 
 namespace DiscordMessageTemplate.Compiler;
 
+public struct SourcefilePosition
+{
+    public string SourcefilePath;
+    public int SourcefileLine;
+    public int SourcefileCursor;
+
+    public override string ToString() => $" file {SourcefilePath} in line {SourcefileLine}:{SourcefileCursor}";
+}
+
+public static class ComponentModel
+{
+    public static SourcefilePosition ToSrcPos(this IToken token, string? clsName = null) => new()
+        { SourcefileLine = token.Line, SourcefileCursor = token.Column, SourcefilePath = clsName ?? "<unknown>" };
+}
+
 public interface ITemplateComponent
 {
     object? Evaluate(TemplateContext context, params object?[] args);

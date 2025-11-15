@@ -21,6 +21,8 @@ MULTIPLY: '*';
 DIVIDE: '/';
 MODULUS: '%';
 ROOF: '^';
+LT: '<';
+GT: '>';
 
 LBRACE: '(';
 RBRACE: ')';
@@ -86,6 +88,8 @@ binaryOpBitwiseAnd: AMPERSAND;
 binaryOpLogicalAnd: AMPERSAND AMPERSAND;
 binaryOpBitwiseOr: BAR;
 binaryOpLogicalOr: BAR BAR;
+binaryOpLessThan: LT;
+binaryOpGreaterThan: GT;
 binaryOp
     : binaryOpPlus
     | binaryOpMinus
@@ -97,17 +101,19 @@ binaryOp
     | binaryOpLogicalAnd
     | binaryOpBitwiseOr
     | binaryOpLogicalOr
+    | binaryOpLessThan
+    | binaryOpGreaterThan
 ;
 
 expression
-    : STRLIT                                                                #exprString
-    | (TRUE | FALSE)                                                        #exprBool
-    | NUM (DOT NUM)?                                                        #exprNumber
-    | ID                                                                    #exprVar
-    | HEXNUM                                                                #exprHexColor
+    : left=expression binaryOp right=expression                             #exprBinaryOp
     | unaryOp expression                                                    #exprUnaryOp
-    | left=expression binaryOp right=expression                             #exprBinaryOp
     | funcname=ID LBRACE (expression (COMMA expression)*)? RBRACE           #exprCallFunc
+    | ID                                                                    #exprVar
+    | STRLIT                                                                #exprString
+    | NUM (DOT NUM)?                                                        #exprNumber
+    | HEXNUM                                                                #exprHexColor
+    | (TRUE | FALSE)                                                        #exprBool
 ;
 
 embedAuthorComponentField

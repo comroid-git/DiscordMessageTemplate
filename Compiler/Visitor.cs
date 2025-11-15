@@ -1,4 +1,5 @@
-﻿using DiscordMessageTemplate.Antlr;
+﻿using Antlr4.Runtime;
+using DiscordMessageTemplate.Antlr;
 
 namespace DiscordMessageTemplate.Compiler;
 
@@ -41,7 +42,9 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
         return new ContextComputedComponent<object?>(ctx =>
         {
             var args = parameters.Select(component => component.Evaluate(ctx)).ToArray();
-            return ctx.Functions[funcName].Evaluate(ctx, args);
+            return ctx.Functions.ContainsKey(funcName)
+                ? ctx.Functions[funcName].Evaluate(ctx, args)
+                : throw new RuntimeException($"function '{funcName}' is undefined", context.funcname);
         });
     }
 
@@ -74,6 +77,16 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
             var url = str.Evaluate(ctx)?.ToString();
             if (url != null)
                 ctx.Message.Attachments.Add(new MessageAttachment { Url = url });
+        });
+    }
+
+    public override ITemplateComponent VisitComponentEmbed(DiscordMessageTemplateParser.ComponentEmbedContext context)
+    {
+        var block = context.embedComponent().Select(Visit).ToArray();
+        return new ContextEmittingComponent(ctx =>
+        {
+            foreach (var component in block)
+                component.Evaluate(ctx);
         });
     }
 
@@ -187,7 +200,7 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
 
     public override ITemplateComponent VisitEmbedAuthorFlow(DiscordMessageTemplateParser.EmbedAuthorFlowContext context)
     {
-        var name = Visit(context.name);
+        var name = Visit(context.name) ?? throw new ParseException("missing embed.author.name", context.Start);
         var url = context.url != null ? Visit(context.url) : null;
         var icon = context.icon != null ? Visit(context.icon) : null;
         return new ContextEmittingComponent(ctx =>
@@ -246,7 +259,7 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
 
     public override ITemplateComponent VisitEmbedFooterFlow(DiscordMessageTemplateParser.EmbedFooterFlowContext context)
     {
-        var text = Visit(context.text);
+        var text = Visit(context.text ?? throw new ParseException("missing embed.footer.text", context.Start));
         var icon = context.icon != null ? Visit(context.icon) : null;
         return new ContextEmittingComponent(ctx =>
         {
@@ -292,8 +305,8 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
 
     public override ITemplateComponent VisitEmbedFieldFlow(DiscordMessageTemplateParser.EmbedFieldFlowContext context)
     {
-        var title = Visit(context.title);
-        var text = Visit(context.text);
+        var title = Visit(context.title ?? throw new ParseException("missing embed.field.title", context.Start));
+        var text = Visit(context.text ?? throw new ParseException("missing embed.field.text", context.COMMA(0).Symbol));
         return new ContextEmittingComponent(ctx =>
         {
             ctx.Message.Embed.Fields.Add(new MessageEmbedField
@@ -454,7 +467,7 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
 
     public override ITemplateComponent VisitTemplateStatement(DiscordMessageTemplateParser.TemplateStatementContext context)
     {
-        var statements = context.statement().Select(Visit).ToArray();
+        var statements = context.statement().Select(Visit).Where(x => x != null).ToArray();
         return new TemplateDocument(statements);
     }
 
@@ -465,7 +478,7 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
 public static class OperatorExt
 {
     public static object? Evaluate(this DiscordMessageTemplateParser.UnaryOpContext unaryOp, object? source) =>
-        unaryOp.RuleIndex switch
+        ((RuleContext)unaryOp.children[0]).RuleIndex switch
         {
             DiscordMessageTemplateParser.RULE_unaryOpNumericalNegate => -(double?)source,
             DiscordMessageTemplateParser.RULE_unaryOpLogicalNegate => !(bool?)source,
@@ -474,7 +487,7 @@ public static class OperatorExt
         };
 
     public static object? Evaluate(this DiscordMessageTemplateParser.BinaryOpContext binaryOp, object? left, object? right) =>
-        binaryOp.RuleIndex switch
+        ((RuleContext)binaryOp.children[0]).RuleIndex switch
         {
             DiscordMessageTemplateParser.RULE_binaryOpPlus => left is string str ? str + right : (double?)left + (double?)right,
             DiscordMessageTemplateParser.RULE_binaryOpMinus => (double?)left - (double?)right,
@@ -486,6 +499,8 @@ public static class OperatorExt
             DiscordMessageTemplateParser.RULE_binaryOpBitwiseOr => (long?)left | (long?)right,
             DiscordMessageTemplateParser.RULE_binaryOpLogicalAnd => (bool)(left ?? false) && (bool)(right ?? false),
             DiscordMessageTemplateParser.RULE_binaryOpLogicalOr => (bool)(left ?? false) || (bool)(right ?? false),
+            DiscordMessageTemplateParser.RULE_binaryOpLessThan => (double?)left < (double?)right,
+            DiscordMessageTemplateParser.RULE_binaryOpGreaterThan => (double?)left > (double?)right,
             _ => throw new ArgumentOutOfRangeException(nameof(binaryOp), binaryOp, "Invalid binary operator")
         };
 }

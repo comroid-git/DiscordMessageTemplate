@@ -1,4 +1,6 @@
-﻿using Antlr4.Runtime;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Antlr4.Runtime;
 using DiscordMessageTemplate.Antlr;
 using DiscordMessageTemplate.Compiler;
 
@@ -11,8 +13,8 @@ public class Program
         if (args.Length == 0)
         {
             // read using stdio mode
-            var buf = new[]{""};
-            Console.CancelKeyPress += (_, _) => Evaluate(buf[0]);
+            var buf = new[] { "" };
+            Console.CancelKeyPress += (_, _) => EvalAndPrintTemplate(buf[0]);
             int r;
             while ((r = Console.Read()) != -1)
                 buf[0] += (char)r;
@@ -22,11 +24,18 @@ public class Program
             // read from file
             var path = string.Join(" ", args);
             var template = File.ReadAllText(path);
-            Evaluate(template);
+            EvalAndPrintTemplate(template);
         }
     }
 
-    public static MessageData Evaluate(string template)
+    private static void EvalAndPrintTemplate(string template)
+    {
+        var result = Evaluate(template);
+        var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+        Console.WriteLine(json);
+    }
+
+    private static MessageData Evaluate(string template)
     {
         var input = new AntlrInputStream(new StringReader(template));
         var lexer = new DiscordMessageTemplateLexer(input);
