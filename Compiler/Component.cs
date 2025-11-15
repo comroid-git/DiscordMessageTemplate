@@ -47,3 +47,29 @@ public class ContextEmittingComponent : ITemplateComponent
         return null;
     }
 }
+
+public class FunctionComponent : ITemplateComponent
+{
+    public FunctionComponent(string[] @params, ITemplateComponent exec)
+    {
+        _params = @params;
+        _exec = exec;
+    }
+
+    private readonly string[] _params;
+    private readonly ITemplateComponent _exec;
+
+    public object? Evaluate(TemplateContext context, params object?[] args)
+    {
+        return context.Sub(sub =>
+        {
+            // set args
+            var min = Math.Min(_params.Length, args.Length);
+            for (var i = 0; i < min; i++)
+                sub.SetVariable(_params[i], args[i], true);
+
+            _exec.Evaluate(sub);
+            return sub.ReturnValue;
+        });
+    }
+}

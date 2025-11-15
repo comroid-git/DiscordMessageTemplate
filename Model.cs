@@ -7,56 +7,53 @@ public sealed class TemplateContext(TemplateContext? parent = null)
 {
     private readonly TemplateContext? _parent = parent;
     private readonly Dictionary<string, object?> _variables = new();
-    private readonly Dictionary<string, ITemplateComponent> _functions = new();
+    private readonly Dictionary<string, FunctionComponent> _functions = new();
 
     public IReadOnlyDictionary<string, object?> Variables => _variables
         .Concat(_parent?.Variables ?? [])
         .ToDictionary(e => e.Key, e => e.Value);
 
-    public IReadOnlyDictionary<string, ITemplateComponent> Functions => _functions
+    public IReadOnlyDictionary<string, FunctionComponent> Functions => _functions
         .Concat(_parent?.Functions ?? [])
         .ToDictionary(e => e.Key, e => e.Value);
 
     public MessageData Message { get; } = new();
+    public object? ReturnValue { get; set; }
 
-    public T? SetVariable<T>(string key, T value)
+    public T? SetVariable<T>(string key, T value, bool local = false)
     {
-        // find whether any parent has this key already
-        var parent = _parent;
-        while (parent?.Variables.ContainsKey(key) ?? false)
+        TemplateContext? parent;
+        if (!local)
         {
-            if (parent._parent == null)
-                break;
-            parent = parent._parent;
-        }
+            // find whether any parent has this key already
+            parent = _parent;
+            while (parent?.Variables.ContainsKey(key) ?? false)
+            {
+                if (parent._parent == null)
+                    break;
+                parent = parent._parent;
+            }
 
-        if (parent == null || !parent.Variables.ContainsKey(key))
-            parent = this;
+            if (parent == null || !parent.Variables.ContainsKey(key))
+                parent = this;
+        }
+        else parent = this;
 
         return (T?)(parent._variables[key] = value);
     }
 
-    public T SetFunction<T>(string key, ITemplateComponent function) where T : ITemplateComponent
+    public T SetFunction<T>(string key, FunctionComponent function) where T : FunctionComponent => (T)(_functions[key] = function);
+
+    public void Sub(Action<TemplateContext> action) => Sub<object?>(ctx =>
     {
-        // find whether any parent has this key already
-        var parent = _parent;
-        while (parent?.Functions.ContainsKey(key) ?? false)
-        {
-            if (parent._parent == null)
-                break;
-            parent = parent._parent;
-        }
+        action(ctx);
+        return null;
+    });
 
-        if (parent == null || !parent.Functions.ContainsKey(key))
-            parent = this;
-
-        return (T)(parent._functions[key] = function);
-    }
-
-    public void Sub(Action<TemplateContext> action)
+    public T Sub<T>(Func<TemplateContext, T> action)
     {
         var sub = new TemplateContext(this);
-        action(sub);
+        return action(sub);
     }
 }
 

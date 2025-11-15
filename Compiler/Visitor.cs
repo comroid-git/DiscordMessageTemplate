@@ -431,8 +431,18 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
         }));
     }
 
+    public override ITemplateComponent VisitStmtReturn(DiscordMessageTemplateParser.StmtReturnContext context)
+    {
+        var expr = Visit(context.expression());
+        return new ContextEmittingComponent(ctx => ctx.ReturnValue = expr.Evaluate(ctx));
+    }
+
     public override ITemplateComponent VisitStmtDeclFunc(DiscordMessageTemplateParser.StmtDeclFuncContext context)
     {
+        var name = context.name.Text;
+        var exec = Visit(context.statementBlock());
+        var parameters = context.ID()[1..].Select(tn => tn.GetText()).ToArray();
+        return new ContextEmittingComponent(ctx => ctx.SetFunction<FunctionComponent>(name, new FunctionComponent(parameters, exec)));
     }
 }
 

@@ -38,6 +38,7 @@ IF: 'if';
 FOR: 'for';
 WHILE: 'while';
 DO: 'do';
+RETURN: 'return';
 FUNCTION: 'function';
 
 URL: 'url';
@@ -169,6 +170,7 @@ statement
     | FOR LBRACE VAR? varname=ID COLON iterable=expression RBRACE statementBlock                            #stmtForEach
     | WHILE LBRACE check=expression RBRACE statementBlock                                                   #stmtWhile
     | DO statementBlock WHILE LBRACE check=expression RBRACE                                                #stmtDoWhile
+    | RETURN expression SEMICOLON                                                                           #stmtReturn
     | FUNCTION name=ID LBRACE (ID (COMMA ID)+)? RBRACE statementBlock                                       #stmtDeclFunc
 ;
 statementBlock
