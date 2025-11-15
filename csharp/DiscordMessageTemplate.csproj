@@ -26,7 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Antlr4 Include="grammar/DiscordMessageTemplate.g4">
+        <Antlr4 Include="../grammar/DiscordMessageTemplate.g4">
             <Generator>MSBuild:Compile</Generator>
             <Package>DiscordMessageTemplate.Antlr</Package>
             <Listener>False</Listener>

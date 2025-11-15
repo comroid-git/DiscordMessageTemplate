@@ -1,10 +1,20 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Antlr4.Runtime;
+using CommandLine;
 using DiscordMessageTemplate.Antlr;
 using DiscordMessageTemplate.Compiler;
 
 namespace DiscordMessageTemplate;
+
+public class CommandLineOptions
+{
+    [Option('n', "nulls", HelpText = "Include null values")]
+    public bool PrintNulls { get; set; }
+
+    [Value(0, HelpText = "Input string")]
+    public string Input { get; set; }
+}
 
 public class Program
 {
@@ -31,7 +41,8 @@ public class Program
     private static void EvalAndPrintTemplate(string template)
     {
         var result = Evaluate(template);
-        var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(result,
+            new JsonSerializerOptions { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
         Console.WriteLine(json);
     }
 
