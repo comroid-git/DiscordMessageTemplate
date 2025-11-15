@@ -83,6 +83,7 @@ public sealed class RootContext : TemplateContext
 
     public override IReadOnlyDictionary<string, object?> Variables => Constants.Concat(base.Variables)
         .ToDictionary(e => e.Key, e => e.Value);
+
     public override IReadOnlyDictionary<string, FunctionComponent> Functions => SystemFunctions.Concat(base.Functions)
         .ToDictionary(e => e.Key, e => e.Value);
 
@@ -94,7 +95,18 @@ public sealed class RootContext : TemplateContext
 
     public readonly ReadOnlyDictionary<string, FunctionComponent> SystemFunctions = new(new Dictionary<string, FunctionComponent>
     {
-        { "now", new FunctionComponent([], new ContextComputedComponent<DateTime>(_ => DateTime.Now)) }
+        { "now", new FunctionComponent([], new ContextComputedComponent<DateTime>(_ => DateTime.Now)) },
+        {
+            "sizeof", new FunctionComponent(["it"], new ArgumentComputedComponent<long>((ctx, args) =>
+            {
+                var it = args[0];
+                return it switch
+                {
+                    IEnumerable<object?> enumerable => enumerable.LongCount(),
+                    _ => 0
+                };
+            }))
+        }
     });
 }
 

@@ -50,6 +50,11 @@ public class ContextComputedComponent<T>(Func<TemplateContext, T> source) : ITem
     }
 }
 
+public class ArgumentComputedComponent<T>(Func<TemplateContext, object?[], T> source) : ITemplateComponent
+{
+    public object? Evaluate(TemplateContext context, params object?[] args) => source(context, args);
+}
+
 public class ContextEmittingComponent(Action<TemplateContext> emitter) : ITemplateComponent
 {
     public object? Evaluate(TemplateContext context, params object?[] args)
