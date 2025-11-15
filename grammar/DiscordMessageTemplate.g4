@@ -165,8 +165,8 @@ statement
     : messageComponent                                                                                      #stmtComponent
     | VAR? varname=ID ASSIGN expression                                                                     #stmtAssign
     | IF LBRACE expression RBRACE statementBlock                                                            #stmtIf
-    | FOR LBRACE init=union? SEMICOLON check=expression? SEMICOLON accumulate=union RBRACE statementBlock   #stmtForI
-    | FOR LBRACE varname=ID COLON iterable=expression RBRACE statementBlock                                 #stmtForEach
+    | FOR LBRACE init=union? SEMICOLON check=expression? SEMICOLON accumulate=union? RBRACE statementBlock  #stmtForI
+    | FOR LBRACE VAR? varname=ID COLON iterable=expression RBRACE statementBlock                            #stmtForEach
     | WHILE LBRACE check=expression RBRACE statementBlock                                                   #stmtWhile
     | DO statementBlock WHILE LBRACE check=expression RBRACE                                                #stmtDoWhile
     | FUNCTION name=ID LBRACE (ID (COMMA ID)+)? RBRACE statementBlock                                       #stmtDeclFunc
@@ -174,7 +174,7 @@ statement
 statementBlock
     : SEMICOLON             #stmtBlockEmpty
     | LACC statement* RACC  #stmtBlock
-    | statement             #stmtSingular
+    | statement SEMICOLON   #stmtSingular
 ;
 
 template

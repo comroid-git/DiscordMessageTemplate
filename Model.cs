@@ -3,11 +3,61 @@ using DiscordMessageTemplate.Compiler;
 
 namespace DiscordMessageTemplate;
 
-public sealed class TemplateContext
+public sealed class TemplateContext(TemplateContext? parent = null)
 {
-    public Dictionary<string, object> Variables { get; } = new();
-    public Dictionary<string, ITemplateComponent> Functions { get; } = new();
+    private readonly TemplateContext? _parent = parent;
+    private readonly Dictionary<string, object?> _variables = new();
+    private readonly Dictionary<string, ITemplateComponent> _functions = new();
+
+    public IReadOnlyDictionary<string, object?> Variables => _variables
+        .Concat(_parent?.Variables ?? [])
+        .ToDictionary(e => e.Key, e => e.Value);
+
+    public IReadOnlyDictionary<string, ITemplateComponent> Functions => _functions
+        .Concat(_parent?.Functions ?? [])
+        .ToDictionary(e => e.Key, e => e.Value);
+
     public MessageData Message { get; } = new();
+
+    public T? SetVariable<T>(string key, T value)
+    {
+        // find whether any parent has this key already
+        var parent = _parent;
+        while (parent?.Variables.ContainsKey(key) ?? false)
+        {
+            if (parent._parent == null)
+                break;
+            parent = parent._parent;
+        }
+
+        if (parent == null || !parent.Variables.ContainsKey(key))
+            parent = this;
+
+        return (T?)(parent._variables[key] = value);
+    }
+
+    public T SetFunction<T>(string key, ITemplateComponent function) where T : ITemplateComponent
+    {
+        // find whether any parent has this key already
+        var parent = _parent;
+        while (parent?.Functions.ContainsKey(key) ?? false)
+        {
+            if (parent._parent == null)
+                break;
+            parent = parent._parent;
+        }
+
+        if (parent == null || !parent.Functions.ContainsKey(key))
+            parent = this;
+
+        return (T)(parent._functions[key] = function);
+    }
+
+    public void Sub(Action<TemplateContext> action)
+    {
+        var sub = new TemplateContext(this);
+        action(sub);
+    }
 }
 
 public sealed class MessageData

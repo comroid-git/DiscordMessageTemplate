@@ -339,6 +339,101 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
 
     public override ITemplateComponent VisitEmbedFieldComponentInline(DiscordMessageTemplateParser.EmbedFieldComponentInlineContext context) =>
         new ContextEmittingComponent(ctx => ctx.Message.Embed.LastField.Inline = context.TRUE() != null);
+
+    public override ITemplateComponent VisitStmtBlockEmpty(DiscordMessageTemplateParser.StmtBlockEmptyContext context) =>
+        new ContextEmittingComponent(_ => { });
+
+    public override ITemplateComponent VisitStmtBlock(DiscordMessageTemplateParser.StmtBlockContext context)
+    {
+        var statements = context.statement().Select(Visit).ToArray();
+        return new ContextEmittingComponent(ctx =>
+        {
+            foreach (var statement in statements)
+                statement.Evaluate(ctx);
+        });
+    }
+
+    public override ITemplateComponent VisitStmtSingular(DiscordMessageTemplateParser.StmtSingularContext context)
+    {
+        var statement = Visit(context.statement());
+        return new ContextEmittingComponent(ctx => statement.Evaluate(ctx));
+    }
+
+    public override ITemplateComponent VisitStmtAssign(DiscordMessageTemplateParser.StmtAssignContext context)
+    {
+        var value = Visit(context.expression());
+        return new ContextEmittingComponent(ctx => ctx.SetVariable(context.varname.Text, value.Evaluate(ctx)));
+    }
+
+    public override ITemplateComponent VisitStmtIf(DiscordMessageTemplateParser.StmtIfContext context)
+    {
+        var check = Visit(context.expression());
+        var exec = Visit(context.statementBlock());
+        return new ContextEmittingComponent(ctx => ctx.Sub(sub =>
+        {
+            if ((bool?)check.Evaluate(sub) == true)
+                exec.Evaluate(sub);
+        }));
+    }
+
+    public override ITemplateComponent VisitStmtForI(DiscordMessageTemplateParser.StmtForIContext context)
+    {
+        var init = context.init != null ? Visit(context.init) : null;
+        var check = context.check != null ? Visit(context.check) : null;
+        var accumulate = context.accumulate != null ? Visit(context.accumulate) : null;
+        var exec = Visit(context.statementBlock());
+        return new ContextEmittingComponent(ctx => ctx.Sub(sub =>
+        {
+            init?.Evaluate(sub);
+            while ((bool?)check?.Evaluate(sub) ?? false)
+            {
+                exec.Evaluate(sub);
+                accumulate?.Evaluate(sub);
+            }
+        }));
+    }
+
+    public override ITemplateComponent VisitStmtForEach(DiscordMessageTemplateParser.StmtForEachContext context)
+    {
+        var iterable = context.iterable != null ? Visit(context.iterable) : null;
+        return new ContextEmittingComponent(ctx => ctx.Sub(sub =>
+        {
+            var varname = context.varname.Text;
+            var iter = (IEnumerable<object?>)(iterable?.Evaluate(sub) ?? throw new ArgumentNullException("iterator"));
+            var exec = Visit(context.statementBlock());
+            foreach (var each in iter)
+            {
+                sub.SetVariable(varname, each);
+                exec.Evaluate(sub);
+            }
+        }));
+    }
+
+    public override ITemplateComponent VisitStmtWhile(DiscordMessageTemplateParser.StmtWhileContext context)
+    {
+        var check = Visit(context.check);
+        var exec = Visit(context.statementBlock());
+        return new ContextEmittingComponent(ctx => ctx.Sub(sub =>
+        {
+            while ((bool?)check?.Evaluate(sub) ?? false)
+                exec.Evaluate(sub);
+        }));
+    }
+
+    public override ITemplateComponent VisitStmtDoWhile(DiscordMessageTemplateParser.StmtDoWhileContext context)
+    {
+        var exec = Visit(context.statementBlock());
+        var check = Visit(context.check);
+        return new ContextEmittingComponent(ctx => ctx.Sub(sub =>
+        {
+            do exec.Evaluate(sub);
+            while ((bool?)check.Evaluate(sub) ?? false);
+        }));
+    }
+
+    public override ITemplateComponent VisitStmtDeclFunc(DiscordMessageTemplateParser.StmtDeclFuncContext context)
+    {
+    }
 }
 
 public static class OperatorExt
