@@ -66,6 +66,8 @@ binaryOpMultiply: MULTIPLY;
 binaryOpDivide: DIVIDE;
 binaryOpModulus: MODULUS;
 binaryOpPow: ROOF;
+binaryOpEquals: ASSIGN ASSIGN;
+binaryOpNotEquals: EXCLAMATION ASSIGN;
 binaryOpBitwiseAnd: AMPERSAND;
 binaryOpLogicalAnd: AMPERSAND AMPERSAND;
 binaryOpBitwiseOr: BAR;
@@ -79,6 +81,8 @@ binaryOp
     | binaryOpDivide
     | binaryOpModulus
     | binaryOpPow
+    | binaryOpEquals
+    | binaryOpNotEquals
     | binaryOpBitwiseAnd
     | binaryOpLogicalAnd
     | binaryOpBitwiseOr

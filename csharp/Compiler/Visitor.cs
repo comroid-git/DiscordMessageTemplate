@@ -522,6 +522,8 @@ public static class OperatorExt
             DiscordMessageTemplateParser.RULE_binaryOpDivide => (double?)left / (double?)right,
             DiscordMessageTemplateParser.RULE_binaryOpModulus => (double?)left % (double?)right,
             DiscordMessageTemplateParser.RULE_binaryOpPow => Math.Pow((double)left!, (double)right!),
+            DiscordMessageTemplateParser.RULE_binaryOpEquals => left == right,
+            DiscordMessageTemplateParser.RULE_binaryOpNotEquals => left != right,
             DiscordMessageTemplateParser.RULE_binaryOpBitwiseAnd => (long?)left & (long?)right,
             DiscordMessageTemplateParser.RULE_binaryOpBitwiseOr => (long?)left | (long?)right,
             DiscordMessageTemplateParser.RULE_binaryOpLogicalAnd => (bool)(left ?? false) && (bool)(right ?? false),
