@@ -7,7 +7,7 @@ embed = {
     // author variants
     author = "Kaleidox", "https://kaleidox.de/favicon.png";
     author = author {
-        name = "Kaleidox";
+        name = "Kaleidox - " + user["xy"]["name"];
         icon = "https://kaleidox.de/favicon.png";
         url = "https://kaleidox.de";
     }

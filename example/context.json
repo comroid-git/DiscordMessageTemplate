@@ -1,0 +1,10 @@
+{
+  "user": {
+    "id": 123456,
+    "name": "dummy"
+  },
+  "channel": {
+    "id": 234567,
+    "name": "general"
+  }
+}
