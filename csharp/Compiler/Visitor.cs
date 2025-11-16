@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Antlr4.Runtime;
+﻿using Antlr4.Runtime;
 using DiscordMessageTemplate.Antlr;
 
 namespace DiscordMessageTemplate.Compiler;
@@ -52,16 +51,45 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
     public override ITemplateComponent VisitExprGetMember(DiscordMessageTemplateParser.ExprGetMemberContext context)
     {
         var @base = Visit(context.source);
+        var key = context.member.Text[1..^1];
         return new ContextComputedComponent<object?>(ctx =>
         {
             var baseValue = @base.Evaluate(ctx);
             return baseValue switch
             {
-                IDictionary<string, object?> dict => dict[context.member.Text[1..^1]],
-                _ => throw new RuntimeException($"could not get member of type {baseValue?.GetType()}", context.source.Start)
+                IDictionary<string, object?> dict => dict[key],
+                _ => throw new RuntimeException($"could not get value at key '{key}' on root object of type {baseValue?.GetType()}", context.source.Start)
             };
         });
     }
+
+    public override ITemplateComponent VisitExprGetIndex(DiscordMessageTemplateParser.ExprGetIndexContext context)
+    {
+        var @base = Visit(context.source);
+        var index = int.Parse(context.index.Text);
+        return new ContextComputedComponent<object?>(ctx =>
+        {
+            var baseValue = @base.Evaluate(ctx);
+            return baseValue switch
+            {
+                IEnumerable<object?> enumerable => enumerable.Skip(index).FirstOrDefault(null!),
+                _ => throw new RuntimeException($"could not get value at index '{index}' on root object of type {baseValue?.GetType()}", context.source.Start)
+            };
+        });
+    }
+
+    public override ITemplateComponent VisitExprInitArray(DiscordMessageTemplateParser.ExprInitArrayContext context) =>
+        new ContextComputedComponent<object?[]>(ctx => context.expression()
+            .Select(Visit)
+            .Select(tc => tc.Evaluate(ctx))
+            .ToArray());
+
+    public override ITemplateComponent VisitExprInitObject(DiscordMessageTemplateParser.ExprInitObjectContext context) =>
+        new ContextComputedComponent<object>(ctx => context.keyValuePair()
+            .Select(kv => (key: kv.key.Text[1..^1], expr: Visit(kv.value)))
+            .ToDictionary(kv => kv.key, kv => kv.expr.Evaluate(ctx)));
+
+    public override ITemplateComponent VisitExprNull(DiscordMessageTemplateParser.ExprNullContext context) => new ConstantComponent<object?>(null);
 
     public override ITemplateComponent VisitExprUnaryOp(DiscordMessageTemplateParser.ExprUnaryOpContext context)
     {

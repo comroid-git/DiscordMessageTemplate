@@ -91,8 +91,12 @@ binaryOp
     | binaryOpGreaterThan
 ;
 
+keyValuePair: key=STRLIT COLON value=expression;
 expression
-    : source=expression LIDX member=STRLIT RIDX                             #exprGetMember
+    : source=expression LIDX index=NUM RIDX                                 #exprGetIndex
+    | source=expression LIDX member=STRLIT RIDX                             #exprGetMember
+    | LIDX (expression COMMA?)+ LIDX                                        #exprInitArray
+    | LACC (keyValuePair COMMA?)+ RACC                                      #exprInitObject
     | left=expression binaryOp right=expression                             #exprBinaryOp
     | unaryOp expression                                                    #exprUnaryOp
     | funcname=ID LBRACE (expression (COMMA expression)*)? RBRACE           #exprCallFunc
@@ -101,6 +105,7 @@ expression
     | NUM (DOT NUM)?                                                        #exprNumber
     | HEXNUM                                                                #exprHexColor
     | (TRUE | FALSE)                                                        #exprBool
+    | 'null'                                                                #exprNull
 ;
 
 embedAuthorComponentField
