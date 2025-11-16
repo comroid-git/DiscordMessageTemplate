@@ -1,9 +1,13 @@
 ﻿text = "Hello, World!";
+
+load("modules.dmt");
+enable("feature");
+
 embed = {
     title = "Embed Title";
     url = "https://google.com";
     description = "Embed Description";
-    
+
     // author variants
     author = "Kaleidox", "https://kaleidox.de/favicon.png";
     author = author {

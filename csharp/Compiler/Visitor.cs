@@ -510,7 +510,17 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
             throw new RuntimeException($"cannot rebind system function '{name}'", context.name);
         var exec = Visit(context.statementBlock());
         var parameters = context.ID()[1..].Select(tn => tn.GetText()).ToArray();
-        return new ContextEmittingComponent(ctx => ctx.SetFunction<FunctionComponent>(name, new FunctionComponent(parameters, exec)));
+        return new ContextEmittingComponent(ctx =>
+            ctx.SetFunction<FunctionComponent>(name, new FunctionComponent(parameters, exec) { SrcPos = context.LBRACE().Symbol }));
+    }
+
+    public override ITemplateComponent VisitUnion(DiscordMessageTemplateParser.UnionContext context)
+    {
+        if (context.statement() is { } stmt)
+            return Visit(stmt);
+        if (context.expression() is { } expr)
+            return Visit(expr);
+        throw new ParseException("invalid union", context.Start);
     }
 
     public override ITemplateComponent VisitTemplateConst(DiscordMessageTemplateParser.TemplateConstContext context)
@@ -522,7 +532,7 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
 
     public override ITemplateComponent VisitTemplateStatement(DiscordMessageTemplateParser.TemplateStatementContext context)
     {
-        var statements = context.statement().Select(Visit).Where(x => x != null).ToArray();
+        var statements = context.union().Select(Visit).Where(x => x != null).ToArray();
         return new TemplateDocument(statements);
     }
 

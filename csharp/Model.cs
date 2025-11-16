@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Antlr4.Runtime;
 using DiscordMessageTemplate.Compiler;
 
@@ -7,9 +6,9 @@ namespace DiscordMessageTemplate;
 
 public abstract class TemplateContext(TemplateContext? parent, MessageData? message)
 {
+    private readonly Dictionary<string, FunctionComponent> _functions = new();
     private readonly TemplateContext? _parent = parent;
     private readonly Dictionary<string, object?> _variables = new();
-    private readonly Dictionary<string, FunctionComponent> _functions = new();
 
     public virtual IReadOnlyDictionary<string, object?> Variables => _variables
         .Concat(_parent?.Variables ?? new Dictionary<string, object?>())
@@ -81,19 +80,9 @@ public sealed class RootContext : TemplateContext
 {
     public static readonly RootContext Instance = new();
 
-    public override IReadOnlyDictionary<string, object?> Variables => Constants.Concat(base.Variables)
-        .ToDictionary(e => e.Key, e => e.Value);
-
-    public override IReadOnlyDictionary<string, FunctionComponent> Functions => SystemFunctions.Concat(base.Functions)
-        .ToDictionary(e => e.Key, e => e.Value);
-
-    private RootContext() : base(null, new MessageData())
-    {
-    }
-
     public readonly Dictionary<string, object?> Constants = new();
 
-    public readonly ReadOnlyDictionary<string, FunctionComponent> SystemFunctions = new(new Dictionary<string, FunctionComponent>
+    public readonly Dictionary<string, FunctionComponent> SystemFunctions = new()
     {
         { "now", new FunctionComponent([], new ContextComputedComponent<DateTime>(_ => DateTime.Now)) },
         {
@@ -106,8 +95,34 @@ public sealed class RootContext : TemplateContext
                     _ => 0
                 };
             }))
+        },
+        {
+            "load", new FunctionComponent(["path"], new ArgumentComputedComponent<object?>((ctx, args) =>
+            {
+                var file = args[0];
+                ctx.Root.LoadScript(file?.ToString() ?? throw new RuntimeException("cannot load module; script path is null", null));
+                return true;
+            }))
         }
-    });
+    };
+
+    private RootContext() : base(null, new MessageData())
+    {
+    }
+
+    public override IReadOnlyDictionary<string, object?> Variables => Constants.Concat(base.Variables)
+        .ToDictionary(e => e.Key, e => e.Value);
+
+    public override IReadOnlyDictionary<string, FunctionComponent> Functions => SystemFunctions.Concat(base.Functions)
+        .ToDictionary(e => e.Key, e => e.Value);
+
+    private void LoadScript(string file)
+    {
+        if (!File.Exists(file))
+            throw new RuntimeException($"cannot load module; script file '{file}' missing", null);
+        var template = File.ReadAllText(file.ToString());
+        Program.Evaluate(template);
+    }
 }
 
 public sealed class MessageData
@@ -138,8 +153,8 @@ public sealed class MessageAttachment
 public sealed class MessageEmbed
 {
     private MessageEmbedAuthor? _author;
-    private MessageEmbedImage? _image;
     private MessageEmbedFooter? _footer;
+    private MessageEmbedImage? _image;
     [JsonPropertyName("title")] public string? Title { get; set; }
     [JsonPropertyName("type")] public string Type { get; } = "rich";
     [JsonPropertyName("description")] public string? Description { get; set; }
@@ -207,6 +222,6 @@ public sealed class MessageEmbedField
     [JsonPropertyName("inline")] public bool? Inline { get; set; } = false;
 }
 
-public sealed class ParseException(string message, IToken srcPos) : Exception(message + '@' + srcPos.ToSrcPos());
+public sealed class ParseException(string message, IToken? srcPos) : Exception(message + " @ " + srcPos.ToSrcPos());
 
-public sealed class RuntimeException(string message, IToken srcPos) : Exception(message + '@' + srcPos.ToSrcPos());
+public sealed class RuntimeException(string message, IToken? srcPos) : Exception(message + " @ " + srcPos.ToSrcPos());

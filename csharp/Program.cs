@@ -86,7 +86,7 @@ public class Program
         Console.WriteLine(json);
     }
 
-    private static MessageData Evaluate(string template)
+    public static MessageData Evaluate(string template)
     {
         var input = new AntlrInputStream(new StringReader(template));
         var lexer = new DiscordMessageTemplateLexer(input);

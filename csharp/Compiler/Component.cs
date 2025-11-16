@@ -8,13 +8,14 @@ public struct SourcefilePosition
     public int SourcefileLine;
     public int SourcefileCursor;
 
-    public override string ToString() => $" file {SourcefilePath} in line {SourcefileLine}:{SourcefileCursor}";
+    public override string ToString() => SourcefilePath == null ? "<internal>" : $"file {SourcefilePath} in line {SourcefileLine}:{SourcefileCursor}";
 }
 
 public static class ComponentModel
 {
-    public static SourcefilePosition ToSrcPos(this IToken token, string? clsName = null) => new()
-        { SourcefileLine = token.Line, SourcefileCursor = token.Column, SourcefilePath = clsName ?? "<unknown>" };
+    public static SourcefilePosition ToSrcPos(this IToken? token, string? clsName = null) => token == null
+        ? new SourcefilePosition()
+        : new SourcefilePosition { SourcefileLine = token.Line, SourcefileCursor = token.Column, SourcefilePath = clsName ?? "<unknown>" };
 }
 
 public interface ITemplateComponent
@@ -66,16 +67,19 @@ public class ContextEmittingComponent(Action<TemplateContext> emitter) : ITempla
 
 public class FunctionComponent(string[] @params, ITemplateComponent exec) : ITemplateComponent
 {
+    public IToken? SrcPos { get; init; }
+
     public object? Evaluate(TemplateContext context, params object?[] args)
     {
         return context.Sub(sub =>
         {
             // set args
-            var min = Math.Min(@params.Length, args.Length);
-            for (var i = 0; i < min; i++)
+            if (args.Length < @params.Length)
+                throw new RuntimeException($"not enough arguments; expected {@params.Length}, got [{string.Join(",", args)}]", SrcPos);
+            for (var i = 0; i < @params.Length; i++)
                 sub.SetVariable(@params[i], args[i], true);
 
-            exec.Evaluate(sub);
+            exec.Evaluate(sub, args);
             return sub.ReturnValue;
         });
     }

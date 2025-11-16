@@ -42,8 +42,8 @@ DO: 'do';
 RETURN: 'return';
 FUNCTION: 'function';
 
-TRUE: 'true' | 'yes' | 'on' | 'enable''d'? | 'towards' | 'based' | 'indisputable' | 'y''e'?('a'('h'|'y')?)? | 'hooray' | 'lesgo';
-FALSE: 'false' | 'no' | 'off' | 'disable''d'? | 'against' | 'biased' | 'reconsiderable' | 'n'[ao]+[yh]? | 'boo' | 'shut';
+TRUE: 'true' | 'yes' | 'on';
+FALSE: 'false' | 'no' | 'off';
 
 STRLIT: QUOTE (ESCAPE_QUOTE | (~[\r\n"]))* QUOTE;
 NUM: [0-9]+;
@@ -159,13 +159,13 @@ messageComponent
     | 'embed' DOT 'footer' DOT embedFooterComponentField    #componentEmbedFooterField
 ;
 
-union: statement | expression;
+union: statement | expression SEMICOLON;
 
 statement
     : messageComponent                                                                                      #stmtComponent
     | VAR? varname=ID ASSIGN expression                                                                     #stmtAssign
     | IF LBRACE expression RBRACE if=statementBlock (ELSE else=statementBlock)?                             #stmtIf
-    | FOR LBRACE init=union? SEMICOLON check=expression? SEMICOLON accumulate=union? RBRACE statementBlock  #stmtForI
+    | FOR LBRACE init=union? check=expression? SEMICOLON accumulate=statement? RBRACE statementBlock  #stmtForI
     | FOR LBRACE VAR? varname=ID COLON iterable=expression RBRACE statementBlock                            #stmtForEach
     | WHILE LBRACE check=expression RBRACE statementBlock                                                   #stmtWhile
     | DO statementBlock WHILE LBRACE check=expression RBRACE                                                #stmtDoWhile
@@ -180,7 +180,7 @@ statementBlock
 
 template
     : CONST name=ID ASSIGN expression SEMICOLON     #templateConst
-    | statement+                                    #templateStatement
+    | union+                                        #templateStatement
     | STRLIT                                        #templateText
 ;
 
