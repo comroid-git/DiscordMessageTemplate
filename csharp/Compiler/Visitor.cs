@@ -1,4 +1,5 @@
-﻿using Antlr4.Runtime;
+﻿using System.Text.Json;
+using Antlr4.Runtime;
 using DiscordMessageTemplate.Antlr;
 
 namespace DiscordMessageTemplate.Compiler;
@@ -45,6 +46,20 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
             return ctx.Functions.ContainsKey(funcName)
                 ? ctx.Functions[funcName].Evaluate(ctx, args)
                 : throw new RuntimeException($"function '{funcName}' is undefined", context.funcname);
+        });
+    }
+
+    public override ITemplateComponent VisitExprGetMember(DiscordMessageTemplateParser.ExprGetMemberContext context)
+    {
+        var @base = Visit(context.source);
+        return new ContextComputedComponent<object?>(ctx =>
+        {
+            var baseValue = @base.Evaluate(ctx);
+            return baseValue switch
+            {
+                IDictionary<string, object?> dict => dict[context.member.Text],
+                _ => throw new RuntimeException($"could not get member of type {baseValue?.GetType()}", context.source.Start)
+            };
         });
     }
 

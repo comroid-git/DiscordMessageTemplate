@@ -110,6 +110,7 @@ expression
     : left=expression binaryOp right=expression                             #exprBinaryOp
     | unaryOp expression                                                    #exprUnaryOp
     | funcname=ID LBRACE (expression (COMMA expression)*)? RBRACE           #exprCallFunc
+    | source=expression DOT member=ID                                         #exprGetMember
     | ID                                                                    #exprVar
     | STRLIT                                                                #exprString
     | NUM (DOT NUM)?                                                        #exprNumber
