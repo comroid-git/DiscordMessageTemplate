@@ -31,9 +31,6 @@ RIDX: ']';
 LACC: '{';
 RACC: '}';
 
-TEXT: 'text';
-ATTACHMENT: 'attachment';
-
 CONST: 'const';
 VAR: 'var';
 
@@ -44,22 +41,6 @@ WHILE: 'while';
 DO: 'do';
 RETURN: 'return';
 FUNCTION: 'function';
-
-URL: 'url';
-NAME: 'name';
-ICON: 'icon';
-INLINE: 'inline';
-
-EMBED: 'embed';
-TITLE: 'title';
-DESCRIPTION: 'description';
-AUTHOR: 'author';
-TIMESTAMP: 'timestamp';
-COLOR: 'color';
-FOOTER: 'footer';
-IMAGE: 'image';
-FIELDS: 'fields';
-FIELD: 'field';
 
 TRUE: 'true' | 'yes' | 'on' | 'enable''d'? | 'towards' | 'based' | 'indisputable' | 'y''e'?('a'('h'|'y')?)? | 'hooray' | 'lesgo';
 FALSE: 'false' | 'no' | 'off' | 'disable''d'? | 'against' | 'biased' | 'reconsiderable' | 'n'[ao]+[yh]? | 'boo' | 'shut';
@@ -107,10 +88,10 @@ binaryOp
 ;
 
 expression
-    : left=expression binaryOp right=expression                             #exprBinaryOp
+    : source=expression LIDX member=STRLIT RIDX                             #exprGetMember
+    | left=expression binaryOp right=expression                             #exprBinaryOp
     | unaryOp expression                                                    #exprUnaryOp
     | funcname=ID LBRACE (expression (COMMA expression)*)? RBRACE           #exprCallFunc
-    | source=expression DOT member=ID                                         #exprGetMember
     | ID                                                                    #exprVar
     | STRLIT                                                                #exprString
     | NUM (DOT NUM)?                                                        #exprNumber
@@ -119,54 +100,54 @@ expression
 ;
 
 embedAuthorComponentField
-    : NAME ASSIGN expression SEMICOLON    #embedAuthorComponentName
-    | ICON ASSIGN expression SEMICOLON    #embedAuthorComponentIcon
-    | URL ASSIGN expression SEMICOLON     #embedAuthorComponentUrl
+    : 'name' ASSIGN expression SEMICOLON    #embedAuthorComponentName
+    | 'icon' ASSIGN expression SEMICOLON    #embedAuthorComponentIcon
+    | 'url' ASSIGN expression SEMICOLON     #embedAuthorComponentUrl
 ;
 embedAuthorComponent
     : name=expression (COMMA url=expression (COMMA icon=expression)?)? SEMICOLON    #embedAuthorFlow
-    | AUTHOR LACC embedAuthorComponentField+ RACC                                   #embedAuthorObj
+    | 'author' LACC embedAuthorComponentField+ RACC                                 #embedAuthorObj
 ;
 embedFooterComponentField
-    : TEXT ASSIGN expression SEMICOLON    #embedFooterComponentText
-    | ICON ASSIGN expression SEMICOLON    #embedFooterComponentIcon
+    : 'text' ASSIGN expression SEMICOLON    #embedFooterComponentText
+    | 'icon' ASSIGN expression SEMICOLON    #embedFooterComponentIcon
 ;
 embedFooterComponent
-    : text=expression (COMMA icon=expression)? SEMICOLON        #embedFooterFlow
-    | FOOTER LACC embedFooterComponentField+ RACC               #embedFooterObj
+    : text=expression (COMMA icon=expression)? SEMICOLON            #embedFooterFlow
+    | 'footer' LACC embedFooterComponentField+ RACC                 #embedFooterObj
 ;
 embedFieldComponentField
-    : TITLE ASSIGN expression SEMICOLON     #embedFieldComponentTitle
-    | TEXT ASSIGN expression SEMICOLON      #embedFieldComponentText
-    | INLINE (TRUE | FALSE)? SEMICOLON      #embedFieldComponentInline
+    : 'title' ASSIGN expression SEMICOLON     #embedFieldComponentTitle
+    | 'text' ASSIGN expression SEMICOLON      #embedFieldComponentText
+    | 'inline' (TRUE | FALSE)? SEMICOLON      #embedFieldComponentInline
 ;
 embedFieldComponentPart
-    : title=expression COMMA text=expression (COMMA INLINE)? SEMICOLON      #embedFieldFlow
-    | FIELD LACC embedFieldComponentField+ RACC                             #embedFieldObj
+    : title=expression COMMA text=expression (COMMA 'inline')? SEMICOLON      #embedFieldFlow
+    | 'field' LACC embedFieldComponentField+ RACC                             #embedFieldObj
 ;
 embedFieldsComponent
     : embedFieldComponentPart               #embedFieldSingular
     | LIDX embedFieldComponentPart+ RIDX    #embedFieldList
 ;
 embedComponent
-    : TITLE ASSIGN expression SEMICOLON             #embedTitle
-    | URL ASSIGN expression SEMICOLON               #embedUrl
-    | DESCRIPTION ASSIGN expression SEMICOLON       #embedDescription
-    | AUTHOR mutate embedAuthorComponent            #embedAuthor
-    | TIMESTAMP ASSIGN expression SEMICOLON         #embedTimestamp
-    | COLOR ASSIGN expression SEMICOLON             #embedColor
-    | FOOTER mutate embedFooterComponent            #embedFooter
-    | IMAGE ASSIGN expression SEMICOLON             #embedImage
-    | FIELDS mutate embedFieldsComponent            #embedFields
+    : 'title' ASSIGN expression SEMICOLON             #embedTitle
+    | 'url' ASSIGN expression SEMICOLON               #embedUrl
+    | 'description' ASSIGN expression SEMICOLON       #embedDescription
+    | 'author' mutate embedAuthorComponent            #embedAuthor
+    | 'timestamp' ASSIGN expression SEMICOLON         #embedTimestamp
+    | 'color' ASSIGN expression SEMICOLON             #embedColor
+    | 'footer' mutate embedFooterComponent            #embedFooter
+    | 'image' ASSIGN expression SEMICOLON             #embedImage
+    | 'fields' mutate embedFieldsComponent            #embedFields
 ;
 
 messageComponent
-    : TEXT ASSIGN expression SEMICOLON                  #componentText
-    | ATTACHMENT mutate expression SEMICOLON            #componentAttachment
-    | EMBED mutate LACC embedComponent+ RACC            #componentEmbed
-    | EMBED DOT embedComponent                          #componentEmbedToplevelMember
-    | EMBED DOT AUTHOR DOT embedAuthorComponentField    #componentEmbedAuthorField
-    | EMBED DOT FOOTER DOT embedFooterComponentField    #componentEmbedFooterField
+    : 'text' ASSIGN expression SEMICOLON                    #componentText
+    | 'attachment' mutate expression SEMICOLON              #componentAttachment
+    | 'embed' mutate LACC embedComponent+ RACC              #componentEmbed
+    | 'embed' DOT embedComponent                            #componentEmbedToplevelMember
+    | 'embed' DOT 'author' DOT embedAuthorComponentField    #componentEmbedAuthorField
+    | 'embed' DOT 'footer' DOT embedFooterComponentField    #componentEmbedFooterField
 ;
 
 union: statement | expression;
@@ -185,7 +166,7 @@ statement
 statementBlock
     : SEMICOLON             #stmtBlockEmpty
     | LACC statement* RACC  #stmtBlock
-    | statement SEMICOLON   #stmtSingular
+    | statement             #stmtSingular
 ;
 
 template

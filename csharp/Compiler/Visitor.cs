@@ -57,7 +57,7 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
             var baseValue = @base.Evaluate(ctx);
             return baseValue switch
             {
-                IDictionary<string, object?> dict => dict[context.member.Text],
+                IDictionary<string, object?> dict => dict[context.member.Text[1..^1]],
                 _ => throw new RuntimeException($"could not get member of type {baseValue?.GetType()}", context.source.Start)
             };
         });
@@ -336,7 +336,7 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
             {
                 Title = title.Evaluate(ctx)?.ToString() ?? throw new ArgumentNullException("embed.field.title"),
                 Text = text.Evaluate(ctx)?.ToString() ?? throw new ArgumentNullException("embed.field.text"),
-                Inline = context.INLINE() != null
+                Inline = context.COMMA(1) != null
             });
         });
     }
