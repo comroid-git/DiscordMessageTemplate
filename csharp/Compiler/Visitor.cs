@@ -1,4 +1,5 @@
-﻿using Antlr4.Runtime;
+﻿using System.Diagnostics;
+using Antlr4.Runtime;
 using DiscordMessageTemplate.Antlr;
 
 namespace DiscordMessageTemplate.Compiler;
@@ -36,6 +37,19 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
     }
 
     public override ITemplateComponent VisitExprCallFunc(DiscordMessageTemplateParser.ExprCallFuncContext context)
+    {
+        var funcName = context.funcname.Text;
+        var parameters = context.expression().Select(Visit);
+        return new ContextComputedComponent<object?>(ctx =>
+        {
+            var args = parameters.Select(component => component.Evaluate(ctx)).ToArray();
+            return ctx.Functions.ContainsKey(funcName)
+                ? ctx.Functions[funcName].Evaluate(ctx, args)
+                : throw new RuntimeException($"function '{funcName}' is undefined", context.funcname);
+        });
+    }
+
+    public override ITemplateComponent VisitStmtCallFunc(DiscordMessageTemplateParser.StmtCallFuncContext context)
     {
         var funcName = context.funcname.Text;
         var parameters = context.expression().Select(Visit);
@@ -88,6 +102,23 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
         new ContextComputedComponent<object>(ctx => context.keyValuePair()
             .Select(kv => (key: kv.key.Text[1..^1], expr: Visit(kv.value)))
             .ToDictionary(kv => kv.key, kv => kv.expr.Evaluate(ctx)));
+
+    public override ITemplateComponent VisitExprTry(DiscordMessageTemplateParser.ExprTryContext context)
+    {
+        var expr = Visit(context.expression());
+        return new ContextComputedComponent<object?>(ctx =>
+        {
+            try
+            {
+                return expr.Evaluate(ctx);
+            }
+            catch (RuntimeException e)
+            {
+                Debug.WriteLine($"Silenced exception from try-statement: \n{e}");
+                return false;
+            }
+        });
+    }
 
     public override ITemplateComponent VisitExprNull(DiscordMessageTemplateParser.ExprNullContext context) => new ConstantComponent<object?>(null);
 
@@ -433,12 +464,12 @@ public sealed class Visitor : DiscordMessageTemplateBaseVisitor<ITemplateCompone
     {
         var check = Visit(context.expression());
         var execIf = Visit(context.@if);
-        var execElse = Visit(context.@else);
+        var execElse = context.@else != null ? Visit(context.@else) : null;
         return new ContextEmittingComponent(ctx => ctx.Sub(sub =>
         {
             if ((bool?)check.Evaluate(sub) == true)
                 execIf.Evaluate(sub);
-            else execElse.Evaluate(sub);
+            else execElse?.Evaluate(sub);
         }));
     }
 

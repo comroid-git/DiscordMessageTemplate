@@ -100,6 +100,7 @@ expression
     | left=expression binaryOp right=expression                             #exprBinaryOp
     | unaryOp expression                                                    #exprUnaryOp
     | funcname=ID LBRACE (expression (COMMA expression)*)? RBRACE           #exprCallFunc
+    | 'try' expression                                                      #exprTry
     | ID                                                                    #exprVar
     | STRLIT                                                                #exprString
     | NUM (DOT NUM)?                                                        #exprNumber
@@ -164,6 +165,7 @@ union: statement | expression SEMICOLON;
 statement
     : messageComponent                                                                                      #stmtComponent
     | VAR? varname=ID ASSIGN expression                                                                     #stmtAssign
+    | funcname=ID LBRACE (expression (COMMA expression)*)? RBRACE SEMICOLON                                 #stmtCallFunc
     | IF LBRACE expression RBRACE if=statementBlock (ELSE else=statementBlock)?                             #stmtIf
     | FOR LBRACE init=union? check=expression? SEMICOLON accumulate=statement? RBRACE statementBlock  #stmtForI
     | FOR LBRACE VAR? varname=ID COLON iterable=expression RBRACE statementBlock                            #stmtForEach

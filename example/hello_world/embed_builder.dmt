@@ -1,7 +1,7 @@
 ﻿text = "Hello, World!";
 
-load("modules.dmt");
-enable("feature");
+if (try load("modules.dmt"))
+    enable("feature");
 
 embed = {
     title = "Embed Title";
@@ -49,6 +49,7 @@ embed = {
         text = " which holds lot of Footer info";
     }
 }
+
 if (6 < -1) {
     embed.author = "Kaleidox";
     embed.footer.text = "foot";
